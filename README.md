@@ -1,36 +1,153 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vuala OnDemand - Glovo Landing Page
 
-## Getting Started
+A modern, responsive landing page for Glovo OnDemand service built with Next.js, TypeScript, and Tailwind CSS. This project showcases a professional landing page with modular components and modern web development practices.
 
-First, run the development server:
+## 🚀 Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Framework:** Next.js 15.4.5
+- **Language:** TypeScript 5.x
+- **Styling:** Tailwind CSS 4.x
+- **UI Components:** Flowbite React 0.12.6
+- **Authentication:** NextAuth.js 4.24.11
+- **Package Manager:** pnpm
+- **Node.js Version:** 20.x or higher
+
+## 📦 Dependencies
+
+### Production Dependencies
+```json
+{
+  "next": "15.4.5",
+  "react": "19.1.0",
+  "react-dom": "19.1.0",
+  "flowbite-react": "^0.12.6",
+  "next-auth": "^4.24.11"
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Development Dependencies
+```json
+{
+  "@types/node": "^20",
+  "@types/react": "^19",
+  "@types/react-dom": "^19",
+  "@tailwindcss/postcss": "^4",
+  "tailwindcss": "^4",
+  "typescript": "^5",
+  "eslint": "^9",
+  "eslint-config-next": "15.4.5"
+}
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🏗️ Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+└── components/
+    └── landing_page/
+        ├── CTASection.tsx
+        ├── DeliveryTypesSection.tsx
+        ├── FAQSection.tsx
+        ├── FeaturesSection.tsx
+        ├── Footer.tsx
+        ├── HeroSection.tsx
+        ├── LandingPage.tsx
+        ├── PartnersSection.tsx
+        └── WhatIsOnDemandSection.tsx
+```
 
-## Learn More
+## 🛠️ Installation & Setup
 
-To learn more about Next.js, take a look at the following resources:
+### Prerequisites
+- Node.js 20.x or higher
+- pnpm (recommended package manager)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Installation Steps
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd vuala_ondemand
+   ```
 
-## Deploy on Vercel
+2. **Install dependencies:**
+   ```bash
+   pnpm install
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. **Run the development server:**
+   ```bash
+   pnpm dev
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. **Open your browser:**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 📝 Available Scripts
+
+- `pnpm dev` - Start development server with Turbopack
+- `pnpm build` - Build the application for production
+- `pnpm start` - Start the production server
+- `pnpm lint` - Run ESLint for code quality checks
+
+## 🎨 Features
+
+- **Responsive Design:** Mobile-first approach with Tailwind CSS
+- **Modular Components:** Each section is a separate, reusable component
+- **Modern UI:** Clean, professional design matching Glovo branding
+- **Interactive Elements:** Custom accordion FAQ, hover effects
+- **TypeScript:** Full type safety throughout the application
+- **Performance Optimized:** Next.js 15 with Turbopack for fast development
+
+## 🧩 Components Overview
+
+- **HeroSection:** Main banner with call-to-action
+- **WhatIsOnDemandSection:** Service explanation with visual elements
+- **FeaturesSection:** Three key features with icons
+- **PartnersSection:** Technology partner logos
+- **DeliveryTypesSection:** Two delivery options
+- **CTASection:** Partner conversion call-to-action
+- **FAQSection:** Custom accordion with frequently asked questions
+- **Footer:** Contact information and links
+
+## 🎯 Development Guidelines
+
+- Components are located in `src/components/landing_page/`
+- Each component is self-contained with its own styling
+- Uses Tailwind CSS utility classes for styling
+- TypeScript interfaces for type safety
+- Responsive design patterns implemented
+
+## 🚀 Deployment
+
+The application is ready for deployment on platforms like:
+
+- **Vercel** (Recommended for Next.js)
+- **Netlify**
+- **AWS Amplify**
+- **Docker containers**
+
+### Build for Production
+```bash
+pnpm build
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/new-feature`
+3. Commit changes: `git commit -m 'Add new feature'`
+4. Push to branch: `git push origin feature/new-feature`
+5. Submit a pull request
+
+## 📄 License
+
+This project is part of the Vuala OnDemand application suite.
+
+---
+
+**Built with ❤️ using modern web technologies**
