@@ -2,13 +2,13 @@ import { Button } from "flowbite-react";
 
 export default function CTASection() {
   return (
-    <section className="bg-gradient-to-r from-yellow-400 to-yellow-500 py-16 px-4 relative overflow-hidden">
+    <section className="bg-gradient-to-r from-blue-500 to-blue-600 py-16 px-4 relative overflow-hidden">
       <div className="container mx-auto max-w-4xl text-center">
-        <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-          ¿Aún no eres Partner de Glovo?
+        <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
+          ¿Aún no eres Partner de Vualá?
         </h2>
         <p className="text-lg text-gray-800 mb-8 max-w-2xl mx-auto">
-          Únete a miles de restaurantes y negocios que ya confían en nosotros para sus entregas
+          Únete a cientos de restaurantes y negocios que ya confían en nosotros para sus entregas
         </p>
         <Button 
           size="xl" 

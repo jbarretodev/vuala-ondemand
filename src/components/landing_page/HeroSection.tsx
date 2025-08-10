@@ -3,15 +3,15 @@ import Image from "next/image";
 
 export default function HeroSection() {
   return (
-    <section className="bg-gradient-to-br from-yellow-400 to-yellow-500 py-16 px-4 relative overflow-hidden">
+    <section className="bg-gradient-to-br from-blue-500 to-blue-600 py-16 px-4 relative overflow-hidden">
       <div className="container mx-auto max-w-6xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Left Content */}
           <div className="space-y-6">
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-              Pedidos desde tu propio canal de venta a las manos de tus clientes con Glovo On-Demand
+            <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
+              Realizamos recogidas y entregas en tiempo récord!!!
             </h1>
-            <p className="text-lg text-gray-800 max-w-md">
+            <p className="text-lg text-white max-w-md">
               Integra tu negocio con nuestra plataforma y llega a más clientes con entregas rápidas y confiables.
             </p>
             <Button 
