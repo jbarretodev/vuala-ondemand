@@ -28,8 +28,11 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 
 export default function FAQSection() {
   const faqs = [
+    { question: "¿Solo realizan entregas a Empresas?",
+      answer: "Nuestra misión es que TODOS se dediquen a sus cosas que las recogidas y entregas las realizamos nosotros./n Trabajamos con particulares y empresas."
+    },
     {
-      question: "¿Cuánto tiempo tarda la integración con Glovo On-Demand?",
+      question: "¿Cuánto tiempo tarda la integración con Vualá?",
       answer: "La integración típicamente toma entre 1-2 semanas dependiendo de la complejidad de tu sistema actual. Nuestro equipo técnico te acompañará durante todo el proceso."
     },
     {
@@ -37,11 +40,11 @@ export default function FAQSection() {
       answer: "Ofrecemos planes flexibles adaptados a tu volumen de pedidos. Contáctanos para recibir una cotización personalizada sin compromiso."
     },
     {
-      question: "¿En qué ciudades está disponible Glovo On-Demand?",
-      answer: "Glovo On-Demand está disponible en más de 25 países y cientos de ciudades. Consulta la disponibilidad en tu zona contactando a nuestro equipo comercial."
+      question: "¿En qué ciudades está disponible Vualá?",
+      answer: "Vualá está disponible en la ciudad de Almería y Granada. Consulta la disponibilidad en tu zona contactando a nuestro equipo comercial."
     },
     {
-      question: "¿Qué tipo de negocios pueden usar On-Demand?",
+      question: "¿Qué tipo de negocios pueden usar Vualá ?",
       answer: "Cualquier negocio que necesite entregas puede usar nuestro servicio: restaurantes, farmacias, supermercados, tiendas de conveniencia, y más."
     }
   ];
