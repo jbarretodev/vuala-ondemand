@@ -6,10 +6,12 @@ import DeliveryTypesSection from "./DeliveryTypesSection";
 import CTASection from "./CTASection";
 import FAQSection from "./FAQSection";
 import Footer from "./Footer";
+import Nabvar from "./Navbar";
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen">
+      <Nabvar/>
       <HeroSection />
       <WhatIsOnDemandSection />
       <FeaturesSection />
