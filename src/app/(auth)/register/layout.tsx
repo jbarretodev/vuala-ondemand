@@ -9,7 +9,7 @@ export default function RegisterLayout({ children }: { children: React.ReactNode
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
       {/* Izquierda: igual que login pero con copy de registro */}
-      <section className="hidden md:flex flex-col justify-between bg-blue-500 px-10 py-8 text-white">
+      <section className="hidden md:flex flex-col justify-between bg-[var(--color-brand-500)] px-10 py-8 text-white">
         {/* Logo + mensaje */}
         <div className="flex-1 flex flex-col items-center justify-center text-center">
           <div className="mb-6">
