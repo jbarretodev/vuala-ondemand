@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export default function HeroSection() {
   return (
-    <section className="bg-gradient-to-br from-blue-500 to-blue-600 py-16 px-4 relative overflow-hidden">
+    <section className="bg-[var(--color-brand-500)] py-16 px-4 relative overflow-hidden">
       <div className="container mx-auto max-w-6xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Left Content */}

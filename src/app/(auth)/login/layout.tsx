@@ -9,7 +9,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
       {/* Columna izquierda: texto */}
       
-      <section className="hidden md:flex flex-col items-center justify-center bg-blue-500 px-12 text-center text-white">
+      <section className="hidden md:flex flex-col items-center justify-center bg-[var(--color-brand-500)] px-12 text-center text-white">
       {/* Contenido central */}
       <div className="flex flex-1 flex-col items-center justify-center">
         <div className="max-w-lg">
