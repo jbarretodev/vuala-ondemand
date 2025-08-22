@@ -52,6 +52,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
+  font-family: var(--font-sans);
 }
 
 /* ===== Tipografía base ===== */
@@ -68,4 +69,14 @@ body {
     font-family: var(--font-poppins);
     font-weight: 600; /* ajusta a gusto */
   }
+
+  /* Utilities */
+@layer utilities {
+  .font-sans {
+    font-family: var(--font-sans);
+  }
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+}
 }
