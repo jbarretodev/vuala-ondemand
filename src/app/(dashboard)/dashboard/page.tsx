@@ -1,8 +1,41 @@
+"use client"
+
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function DashboardHome() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return <div>Cargando...</div>;
+  }
+
+  if (!session) {
+    return null;
+  }
   return (
     <>
+    <div className="mb-6 flex items-center justify-between">
+      <div>
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <p className="text-gray-600">Bienvenido, {session.user?.name || session.user?.email}</p>
+      </div>
+      <button
+        onClick={() => signOut({ callbackUrl: "/" })}
+        className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
+      >
+        Cerrar sesión
+      </button>
+    </div>
     <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
         <p className="text-lg text-neutral-600 font-medium">Pedidos de hoy</p>

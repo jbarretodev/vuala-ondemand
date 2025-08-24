@@ -1,16 +1,53 @@
 "use client";
 
 import { useState } from "react";
+import { signIn, getSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    // Aquí conectas tu lógica real (NextAuth, API, etc.)
-    // await signIn("credentials", { redirect: true, callbackUrl: "/" });
-    setTimeout(() => setLoading(false), 800);
+    setError("");
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      console.log(result)
+
+      if (result?.error) {
+        setError("Credenciales inválidas. Por favor, verifica tu email y contraseña.");
+      } else {
+        // Redirect to dashboard after successful login
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      setError("Ocurrió un error. Por favor, intenta nuevamente.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setLoading(true);
+    try {
+      await signIn("google", { callbackUrl: "/dashboard" });
+    } catch (error) {
+      setError("Error al iniciar sesión con Google.");
+      setLoading(false);
+    }
   }
 
   return (
@@ -21,6 +58,7 @@ export default function LoginForm() {
         </label>
         <input
           id="email"
+          name="email"
           type="email"
           required
           autoComplete="email"
@@ -35,6 +73,7 @@ export default function LoginForm() {
         </label>
         <input
           id="password"
+          name="password"
           type="password"
           required
           autoComplete="current-password"
@@ -56,6 +95,12 @@ export default function LoginForm() {
         </a>
       </div>
 
+      {error && (
+        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
       <button
         type="submit"
         disabled={loading}
@@ -70,7 +115,12 @@ export default function LoginForm() {
         <span className="text-xs text-gray-500">o</span>
         <div className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
       </div>
-      <button className="w-full rounded-xl border border-gray-300 px-4 py-2 text-sm dark:border-gray-700">
+      <button 
+        type="button"
+        onClick={handleGoogleSignIn}
+        disabled={loading}
+        className="w-full rounded-xl border border-gray-300 px-4 py-2 text-sm dark:border-gray-700 hover:bg-gray-50 disabled:opacity-60 transition-colors"
+      >
         Continuar con Google
       </button> 
     </form>

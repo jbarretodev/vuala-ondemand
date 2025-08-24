@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
+import AuthSessionProvider from "@/components/providers/SessionProvider";
 /*
 import { Geist, Geist_Mono } from "next/font/google";
 const geistSans = Geist({
@@ -40,7 +41,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${poppins.variable} antialiased`}
       >
-        {children}
+        <AuthSessionProvider>
+          {children}
+        </AuthSessionProvider>
       </body>
     </html>
   );
