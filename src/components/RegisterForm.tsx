@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
 
 export default function RegisterForm() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -19,21 +22,69 @@ export default function RegisterForm() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setLoading(true);
+    setError("");
 
+    // Validation
     if (!form.name || !form.email || !form.password || !form.confirm) {
-      alert("Completa todos los campos.");
+      setError("Completa todos los campos.");
+      setLoading(false);
       return;
     }
     if (!/^\S+@\S+\.\S+$/.test(form.email)) {
-      alert("Correo inválido.");
+      setError("Correo inválido.");
+      setLoading(false);
+      return;
+    }
+    if (form.password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres.");
+      setLoading(false);
       return;
     }
     if (form.password !== form.confirm) {
-      alert("Las contraseñas no coinciden.");
+      setError("Las contraseñas no coinciden.");
+      setLoading(false);
       return;
     }
 
-    router.push("/dashboard");
+    try {
+      // Register user
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || "Error al crear la cuenta.");
+        return;
+      }
+
+      // Auto-login after successful registration
+      const result = await signIn("credentials", {
+        email: form.email,
+        password: form.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Cuenta creada, pero error al iniciar sesión. Intenta iniciar sesión manualmente.");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      setError("Error de conexión. Por favor, intenta nuevamente.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -101,11 +152,18 @@ export default function RegisterForm() {
         />
       </div>
 
+      {error && (
+        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
       <button
         type="submit"
-        className="w-full rounded-xl bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+        disabled={loading}
+        className="w-full rounded-xl bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
       >
-        Crear cuenta
+        {loading ? "Creando cuenta..." : "Crear cuenta"}
       </button>
 
       <p className="mt-4 text-center text-sm text-gray-600">

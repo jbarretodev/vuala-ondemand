@@ -9,9 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/pg": "^8.15.5",
+    "bcryptjs": "^3.0.2",
     "flowbite-react": "^0.12.6",
     "next": "15.4.5",
     "next-auth": "^4.24.11",
+    "pg": "^8.16.3",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },

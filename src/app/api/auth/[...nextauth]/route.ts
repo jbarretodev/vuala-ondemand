@@ -2,6 +2,8 @@ import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import type { NextAuthOptions } from "next-auth"
+// import bcrypt from "bcryptjs" // Uncomment after installing: pnpm add bcryptjs @types/bcryptjs
+import { users } from "../register/route"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -16,27 +18,26 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        // TODO: Replace with your actual authentication logic
-        // This is a demo implementation - connect to your database/API
-        if (credentials.email === "admin@vuala.com" && credentials.password === "password") {
-          return {
-            id: "1",
-            email: credentials.email,
-            name: "Admin User",
-            role: "admin"
-          }
+        // Find user in our users array
+        const user = users.find(u => u.email === credentials.email)
+        
+        if (!user) {
+          return null
         }
 
-        if (credentials.email === "user@vuala.com" && credentials.password === "password") {
-          return {
-            id: "2",
-            email: credentials.email,
-            name: "Regular User",
-            role: "user"
-          }
+        // Temporary: Plain text password comparison (install bcryptjs for production)
+        // const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+        if (user.password !== credentials.password) {
+          return null
         }
 
-        return null
+        // Return user object (without password)
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role
+        }
       }
     }),
     GoogleProvider({
