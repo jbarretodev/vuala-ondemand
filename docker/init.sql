@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     role VARCHAR(50) DEFAULT 'user',
+    provider_id VARCHAR(255),
+    provider_name VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -18,10 +20,10 @@ CREATE TABLE IF NOT EXISTS users (
 -- Create index on email for faster lookups
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
--- Insert default users
+-- Insert default users with hashed passwords (bcrypt hash of 'password')
 INSERT INTO users (name, email, password, role) VALUES 
-    ('Admin User', 'admin@vuala.com', 'password', 'admin'),
-    ('Regular User', 'user@vuala.com', 'password', 'user')
+    ('Admin User', 'admin@vuala.com', '$2b$12$tWGjuo4l/ggB/Ffjam2j/.NK/M4VkA3V9b1APcqXQgMCoHKlbWvEy', 'admin'),
+    ('Regular User', 'user@vuala.com', '$2b$12$tWGjuo4l/ggB/Ffjam2j/.NK/M4VkA3V9b1APcqXQgMCoHKlbWvEy', 'user')
 ON CONFLICT (email) DO NOTHING;
 
 -- Create orders table (for future use)

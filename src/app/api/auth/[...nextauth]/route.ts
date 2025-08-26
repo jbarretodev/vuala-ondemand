@@ -2,8 +2,8 @@ import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import type { NextAuthOptions } from "next-auth"
-// import bcrypt from "bcryptjs" // Uncomment after installing: pnpm add bcryptjs @types/bcryptjs
-import { users } from "../register/route"
+import bcrypt from "bcryptjs"
+import pool from "@/lib/db"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -18,25 +18,36 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        // Find user in our users array
-        const user = users.find(u => u.email === credentials.email)
+        const client = await pool.connect()
         
-        if (!user) {
-          return null
-        }
+        try {
+          // Find user in database
+          const result = await client.query(
+            'SELECT id, name, email, password, role FROM users WHERE email = $1',
+            [credentials.email]
+          )
+          
+          if (result.rows.length === 0) {
+            return null
+          }
 
-        // Temporary: Plain text password comparison (install bcryptjs for production)
-        // const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
-        if (user.password !== credentials.password) {
-          return null
-        }
+          const user = result.rows[0]
 
-        // Return user object (without password)
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role
+          // Compare password with bcrypt
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+          if (!isPasswordValid) {
+            return null
+          }
+
+          // Return user object (without password)
+          return {
+            id: user.id.toString(),
+            email: user.email,
+            name: user.name,
+            role: user.role
+          }
+        } finally {
+          client.release()
         }
       }
     }),

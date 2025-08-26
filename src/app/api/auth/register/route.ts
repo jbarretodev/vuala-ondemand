@@ -1,35 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-// import bcrypt from "bcryptjs" // Uncomment after installing: pnpm add bcryptjs @types/bcryptjs
-
-// Simple in-memory user storage for demo
-// In production, replace this with your database
-let users: Array<{
-  id: string
-  name: string
-  email: string
-  password: string
-  role: string
-  createdAt: Date
-}> = [
-  {
-    id: "1",
-    name: "Admin User",
-    email: "admin@vuala.com",
-    password: "password", // Temporary plain text for demo
-    role: "admin",
-    createdAt: new Date()
-  },
-  {
-    id: "2", 
-    name: "Regular User",
-    email: "user@vuala.com",
-    password: "password", // Temporary plain text for demo
-    role: "user",
-    createdAt: new Date()
-  }
-]
+import bcrypt from "bcryptjs"
+import pool from "@/lib/db"
 
 export async function POST(request: NextRequest) {
+  const client = await pool.connect()
+  
   try {
     const { name, email, password } = await request.json()
 
@@ -56,37 +31,39 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = users.find(user => user.email === email)
-    if (existingUser) {
+    const existingUserResult = await client.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    )
+    
+    if (existingUserResult.rows.length > 0) {
       return NextResponse.json(
         { message: "Ya existe una cuenta con este correo electrónico." },
         { status: 409 }
       )
     }
 
-    // Temporary: Store password as-is for demo (install bcryptjs for production)
-    // const hashedPassword = await bcrypt.hash(password, 12)
-    const hashedPassword = password
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create new user
-    const newUser = {
-      id: (users.length + 1).toString(),
-      name,
-      email,
-      password: hashedPassword,
-      role: "user",
-      createdAt: new Date()
-    }
+    // Create new user in database
+    const insertResult = await client.query(
+      'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role, created_at',
+      [name, email, hashedPassword, 'user']
+    )
 
-    users.push(newUser)
-
-    // Return success (don't include password in response)
-    const { password: _, ...userWithoutPassword } = newUser
+    const newUser = insertResult.rows[0]
     
     return NextResponse.json(
       { 
         message: "Cuenta creada exitosamente.",
-        user: userWithoutPassword
+        user: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role,
+          createdAt: newUser.created_at
+        }
       },
       { status: 201 }
     )
@@ -97,8 +74,8 @@ export async function POST(request: NextRequest) {
       { message: "Error interno del servidor." },
       { status: 500 }
     )
+  } finally {
+    client.release()
   }
 }
 
-// Export users for use in NextAuth (in production, this would be a database query)
-export { users }

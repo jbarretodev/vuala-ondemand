@@ -68,18 +68,8 @@ export default function RegisterForm() {
         return;
       }
 
-      // Auto-login after successful registration
-      const result = await signIn("credentials", {
-        email: form.email,
-        password: form.password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError("Cuenta creada, pero error al iniciar sesión. Intenta iniciar sesión manualmente.");
-      } else {
-        router.push("/dashboard");
-      }
+      // Redirect to login page after successful registration
+      router.push("/login?message=Cuenta creada exitosamente. Inicia sesión con tus credenciales.");
     } catch (error) {
       setError("Error de conexión. Por favor, intenta nuevamente.");
     } finally {
