@@ -2,30 +2,66 @@
 
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useEffect, useMemo, useRef, useState } from "react";
-import mapboxgl, { GeoJSONSource, LngLatLike, Map as MapboxMap } from "mapbox-gl";
+import dynamic from "next/dynamic";
+import mapboxgl, {
+  GeoJSONSource,
+  LngLatLike,
+  Map as MapboxMap,
+} from "mapbox-gl";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
-import { point, featureCollection, Feature, Polygon, MultiPolygon, LineString } from "@turf/helpers";
+import { point, featureCollection } from "@turf/helpers";
 import bbox from "@turf/bbox";
 
 /* ================== Config ================== */
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string;
+if (typeof window !== "undefined") {
+  mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string;
+}
 
 /* ================== Tipos ================== */
 type LatLng = { lat: number; lng: number };
 type Suggestion = { id: string; place_name: string; center: [number, number] };
+
+// Tipos GeoJSON básicos
+interface Feature<T = any> {
+  type: "Feature";
+  geometry: T;
+  properties: any;
+}
+
+interface Polygon {
+  type: "Polygon";
+  coordinates: number[][][];
+}
+
+interface MultiPolygon {
+  type: "MultiPolygon";
+  coordinates: number[][][][];
+}
+
+interface LineString {
+  type: "LineString";
+  coordinates: number[][];
+}
+
 type ZoneFeature = Feature<Polygon | MultiPolygon>;
 
 /* ================== Helpers ================== */
 const fmtPrice = (km: number) => `€ ${Math.max(3, 4.5 + km * 1).toFixed(2)}`;
 const metersToKm = (m: number) => +(m / 1000).toFixed(2);
-const secondsToMinText = (s: number) => `${Math.max(1, Math.round(s / 60))} min`;
+const secondsToMinText = (s: number) =>
+  `${Math.max(1, Math.round(s / 60))} min`;
 
 /* ---------- GeoJSON normalizer (robusto) ---------- */
 function hasValidCoordinates(f: any): f is ZoneFeature {
   if (!f?.geometry) return false;
   const g = f.geometry;
   if (g.type === "Polygon") {
-    return Array.isArray(g.coordinates) && g.coordinates.length > 0 && Array.isArray(g.coordinates[0]) && g.coordinates[0].length > 2;
+    return (
+      Array.isArray(g.coordinates) &&
+      g.coordinates.length > 0 &&
+      Array.isArray(g.coordinates[0]) &&
+      g.coordinates[0].length > 2
+    );
   }
   if (g.type === "MultiPolygon") {
     return (
@@ -46,7 +82,9 @@ function normalizeZoneGeoJSON(gj: any): ZoneFeature | null {
 
     if (gj.type === "FeatureCollection" && Array.isArray(gj.features)) {
       const f = gj.features.find(
-        (ft: any) => ft?.geometry?.type === "Polygon" || ft?.geometry?.type === "MultiPolygon"
+        (ft: any) =>
+          ft?.geometry?.type === "Polygon" ||
+          ft?.geometry?.type === "MultiPolygon"
       );
       if (f && hasValidCoordinates(f)) return f as ZoneFeature;
       return null;
@@ -77,14 +115,17 @@ function AddressInput({
 }: {
   label: string;
   value: string;
-  onSelect: (v: { address: string; coords: { lat: number; lng: number } }) => void;
+  onSelect: (v: {
+    address: string;
+    coords: { lat: number; lng: number };
+  }) => void;
   placeholder?: string;
 }) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [q, setQ] = useState(value);
   const [items, setItems] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
-  const token = mapboxgl.accessToken;
+  const token = typeof window !== "undefined" ? mapboxgl.accessToken : "";
 
   // Mantén sincronizado el valor externo
   useEffect(() => setQ(value), [value]);
@@ -100,7 +141,9 @@ function AddressInput({
       }
       try {
         const url = new URL(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+            query
+          )}.json`
         );
         url.searchParams.set("access_token", token);
         url.searchParams.set("language", "es");
@@ -169,10 +212,16 @@ function AddressInput({
         <svg
           className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
           xmlns="http://www.w3.org/2000/svg"
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
         >
-          <path strokeLinecap="round" strokeLinejoin="round"
-            d="M21 21l-4.35-4.35m1.85-4.65a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 21l-4.35-4.35m1.85-4.65a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
         </svg>
 
         <input
@@ -184,7 +233,8 @@ function AddressInput({
           onBlur={(e) => {
             // pequeño delay para permitir click en la lista
             setTimeout(() => {
-              if (!wrapRef.current?.contains(document.activeElement)) setOpen(false);
+              if (!wrapRef.current?.contains(document.activeElement))
+                setOpen(false);
             }, 100);
           }}
           onKeyDown={handleKeyDown}
@@ -209,11 +259,19 @@ function AddressInput({
   );
 }
 
-
 /* ================== Página ================== */
-export default function NewOrderMapboxPage() {
+function NewOrderMapboxPageClient() {
   const mapRef = useRef<MapboxMap | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Datos del cliente
+  const [customerName, setCustomerName] = useState("");
+  const [customerLastName, setCustomerLastName] = useState("");
+
+  // Orden programada
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
 
   const [pickupAddr, setPickupAddr] = useState("");
   const [dropoffAddr, setDropoffAddr] = useState("");
@@ -224,6 +282,7 @@ export default function NewOrderMapboxPage() {
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [durationText, setDurationText] = useState<string>("");
   const [hasRoute, setHasRoute] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // bandera de mapa listo (fix appendChild)
   const isMapReadyRef = useRef(false);
@@ -270,14 +329,20 @@ export default function NewOrderMapboxPage() {
       zoom: 12,
     });
 
-    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
+    map.addControl(
+      new mapboxgl.NavigationControl({ visualizePitch: true }),
+      "top-right"
+    );
     mapRef.current = map;
 
     const onLoad = () => {
       isMapReadyRef.current = true;
 
       if (!map.getSource("route")) {
-        map.addSource("route", { type: "geojson", data: featureCollection([]) });
+        map.addSource("route", {
+          type: "geojson",
+          data: featureCollection([]),
+        });
         map.addLayer({
           id: "route-line",
           type: "line",
@@ -382,7 +447,11 @@ export default function NewOrderMapboxPage() {
           return;
         }
 
-        const line: Feature<LineString> = { type: "Feature", geometry: r.geometry, properties: {} };
+        const line: Feature<LineString> = {
+          type: "Feature",
+          geometry: r.geometry,
+          properties: {},
+        };
         setHasRoute(true);
         setDistanceKm(metersToKm(r.distance));
         setDurationText(secondsToMinText(r.duration));
@@ -406,7 +475,10 @@ export default function NewOrderMapboxPage() {
     const t = zone.geometry?.type;
     if (t !== "Polygon" && t !== "MultiPolygon") return false;
     try {
-      return booleanPointInPolygon(point([pickup.lng, pickup.lat]), zone as any);
+      return booleanPointInPolygon(
+        point([pickup.lng, pickup.lat]),
+        zone as any
+      );
     } catch (e) {
       console.warn("[zone] booleanPointInPolygon error (pickup):", e);
       return false;
@@ -418,7 +490,10 @@ export default function NewOrderMapboxPage() {
     const t = zone.geometry?.type;
     if (t !== "Polygon" && t !== "MultiPolygon") return false;
     try {
-      return booleanPointInPolygon(point([dropoff.lng, dropoff.lat]), zone as any);
+      return booleanPointInPolygon(
+        point([dropoff.lng, dropoff.lat]),
+        zone as any
+      );
     } catch (e) {
       console.warn("[zone] booleanPointInPolygon error (dropoff):", e);
       return false;
@@ -431,7 +506,60 @@ export default function NewOrderMapboxPage() {
     return [2.1686, 41.3874];
   }, [pickup]);
 
-  const price = useMemo(() => (distanceKm ? fmtPrice(distanceKm) : ""), [distanceKm]);
+  const price = useMemo(
+    () => (distanceKm ? fmtPrice(distanceKm) : ""),
+    [distanceKm]
+  );
+  const priceNumeric = useMemo(
+    () => (distanceKm ? Math.max(3, 4.5 + distanceKm * 1) : 0),
+    [distanceKm]
+  );
+
+  const handleSubmit = async () => {
+    if (!pickup || !dropoff || !hasRoute || !pickupInside || !dropoffInside)
+      return;
+    if (!customerName.trim() || !customerLastName.trim()) {
+      alert("Por favor ingresa nombre y apellido");
+      return;
+    }
+    if (isScheduled && (!scheduledDate || !scheduledTime)) {
+      alert("Por favor selecciona fecha y hora para la orden programada");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: customerName.trim(),
+          customerLastName: customerLastName.trim(),
+          pickupAddress: pickupAddr,
+          deliveryAddress: dropoffAddr,
+          isScheduled,
+          scheduledDate: isScheduled ? scheduledDate : null,
+          scheduledTime: isScheduled ? scheduledTime : null,
+          distanceKm,
+          estimatedTime: durationText,
+          estimatedPrice: priceNumeric,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert("¡Orden creada exitosamente!");
+        window.location.href = "/dashboard/orders";
+      } else {
+        alert(data.error || "Error al crear la orden");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error al crear la orden");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <main className="space-y-4">
@@ -440,58 +568,208 @@ export default function NewOrderMapboxPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Izquierda: formulario */}
         <div className="space-y-6">
+          {/* Datos del Cliente */}
+          <section className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-6">
+            <div className="mb-3 flex items-center gap-3">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand-500)] text-xs font-semibold text-white">
+                1
+              </span>
+              <h2 className="font-heading text-base font-semibold">
+                Datos del Cliente
+              </h2>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium">Nombre</label>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Ingresa el nombre"
+                  className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm outline-none ring-[var(--color-brand-500)]/20 focus:ring-4"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Apellido
+                </label>
+                <input
+                  type="text"
+                  value={customerLastName}
+                  onChange={(e) => setCustomerLastName(e.target.value)}
+                  placeholder="Ingresa el apellido"
+                  className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm outline-none ring-[var(--color-brand-500)]/20 focus:ring-4"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Orden Programada */}
+          <section className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-6">
+            <div className="mb-3 flex items-center gap-3">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand-500)] text-xs font-semibold text-white">
+                2
+              </span>
+              <h2 className="font-heading text-base font-semibold">
+                Programación
+              </h2>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isScheduled"
+                  checked={isScheduled}
+                  onChange={(e) => setIsScheduled(e.target.checked)}
+                  className="h-4 w-4 rounded border-neutral-300 text-[var(--color-brand-500)] focus:ring-[var(--color-brand-500)]"
+                />
+                <label
+                  htmlFor="isScheduled"
+                  className="text-sm font-medium cursor-pointer"
+                >
+                  Programar entrega para más tarde
+                </label>
+              </div>
+              {isScheduled && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Fecha
+                    </label>
+                    <input
+                      type="date"
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      min={new Date().toISOString().split("T")[0]}
+                      className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm outline-none ring-[var(--color-brand-500)]/20 focus:ring-4"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Hora
+                    </label>
+                    <input
+                      type="time"
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                      className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm outline-none ring-[var(--color-brand-500)]/20 focus:ring-4"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
           {/* Recogida */}
           <section className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-6">
             <div className="mb-3 flex items-center gap-3">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand-500)] text-xs font-semibold text-white">1</span>
-              <h2 className="font-heading text-base font-semibold">Detalles de la recogida</h2>
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand-500)] text-xs font-semibold text-white">
+                3
+              </span>
+              <h2 className="font-heading text-base font-semibold">
+                Detalles de la recogida
+              </h2>
             </div>
             <AddressInput
               label="Dirección de recogida"
               value={pickupAddr}
-              onSelect={({ address, coords }) => { setPickupAddr(address); setPickup(coords); }}
+              onSelect={({ address, coords }) => {
+                setPickupAddr(address);
+                setPickup(coords);
+              }}
             />
             {pickup && zone && !pickupInside && (
-              <p className="mt-2 text-sm text-[var(--color-danger)]">La recogida está fuera de la zona de servicio.</p>
+              <p className="mt-2 text-sm text-[var(--color-danger)]">
+                La recogida está fuera de la zona de servicio.
+              </p>
             )}
           </section>
 
           {/* Entrega */}
           <section className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-6">
             <div className="mb-3 flex items-center gap-3">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand-500)] text-xs font-semibold text-white">2</span>
-              <h2 className="font-heading text-base font-semibold">Detalles de la entrega</h2>
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand-500)] text-xs font-semibold text-white">
+                4
+              </span>
+              <h2 className="font-heading text-base font-semibold">
+                Detalles de la entrega
+              </h2>
             </div>
             <AddressInput
               label="Dirección de entrega"
               value={dropoffAddr}
-              onSelect={({ address, coords }) => { setDropoffAddr(address); setDropoff(coords); }}
+              onSelect={({ address, coords }) => {
+                setDropoffAddr(address);
+                setDropoff(coords);
+              }}
             />
             {dropoff && zone && !dropoffInside && (
-              <p className="mt-2 text-sm text-[var(--color-danger)]">La entrega está fuera de la zona de servicio.</p>
+              <p className="mt-2 text-sm text-[var(--color-danger)]">
+                La entrega está fuera de la zona de servicio.
+              </p>
             )}
-            
           </section>
 
           {/* Resumen */}
           <div className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-6">
-            <h3 className="mb-2 font-heading text-base font-semibold">Resumen</h3>
+            <h3 className="mb-2 font-heading text-base font-semibold">
+              Resumen
+            </h3>
             <ul className="space-y-1 text-sm text-neutral-700">
-              <li><strong>Recogida:</strong> {pickupAddr || "—"}</li>
-              <li><strong>Entrega:</strong> {dropoffAddr || "—"}</li>
-              <li><strong>Distancia:</strong> {distanceKm != null ? `${distanceKm} km` : "—"}</li>
-              <li><strong>Tiempo estimado:</strong> {durationText || "—"}</li>
-              <li><strong>Precio estimado:</strong> {price || "—"}</li>
+              <li>
+                <strong>Cliente:</strong>{" "}
+                {customerName && customerLastName
+                  ? `${customerName} ${customerLastName}`
+                  : "—"}
+              </li>
+              <li>
+                <strong>Tipo:</strong>{" "}
+                {isScheduled
+                  ? `Programada (${scheduledDate} ${scheduledTime})`
+                  : "Inmediata"}
+              </li>
+              <li>
+                <strong>Recogida:</strong> {pickupAddr || "—"}
+              </li>
+              <li>
+                <strong>Entrega:</strong> {dropoffAddr || "—"}
+              </li>
+              <li>
+                <strong>Distancia:</strong>{" "}
+                {distanceKm != null ? `${distanceKm} km` : "—"}
+              </li>
+              <li>
+                <strong>Tiempo estimado:</strong> {durationText || "—"}
+              </li>
+              <li>
+                <strong>Precio estimado:</strong> {price || "—"}
+              </li>
             </ul>
 
             <div className="mt-4 flex justify-end gap-3">
-              <a href="/dashboard/orders" className="rounded-xl border border-neutral-300 px-4 py-2 text-sm hover:bg-neutral-50">Cancelar</a>
-              <button
-                disabled={!pickup || !dropoff || !hasRoute || !pickupInside || !dropoffInside}
-                className="rounded-xl bg-[var(--color-warning)] px-4 py-2 text-sm font-heading font-semibold text-neutral-900 hover:bg-[#E6A100] disabled:opacity-50"
-                onClick={() => alert("Servicio Contratado ")}
+              <a
+                href="/dashboard/orders"
+                className="rounded-xl border border-neutral-300 px-4 py-2 text-sm hover:bg-neutral-50"
               >
-                Contratar servicio de entrega
+                Cancelar
+              </a>
+              <button
+                disabled={
+                  !customerName.trim() ||
+                  !customerLastName.trim() ||
+                  !pickup ||
+                  !dropoff ||
+                  !hasRoute ||
+                  !pickupInside ||
+                  !dropoffInside ||
+                  isSubmitting
+                }
+                className="rounded-xl bg-[var(--color-warning)] px-4 py-2 text-sm font-heading font-semibold text-neutral-900 hover:bg-[#E6A100] disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleSubmit}
+              >
+                {isSubmitting
+                  ? "Procesando..."
+                  : "Contratar servicio de entrega"}
               </button>
             </div>
           </div>
@@ -503,7 +781,8 @@ export default function NewOrderMapboxPage() {
             <div ref={containerRef} className="h-full w-full" />
           </div>
           <p className="mt-2 text-xs text-neutral-500">
-            La zona (azul) delimita el área de servicio. Ambas direcciones deben estar dentro.
+            La zona (azul) delimita el área de servicio. Ambas direcciones deben
+            estar dentro.
           </p>
         </div>
       </div>
@@ -536,8 +815,18 @@ function ensureZoneSourceAndLayers(map: MapboxMap, feat: ZoneFeature) {
 function fitToFeature(map: MapboxMap, feat: ZoneFeature) {
   try {
     const [minX, minY, maxX, maxY] = bbox(feat as any);
-    if ([minX, minY, maxX, maxY].every((n) => Number.isFinite(n)) && maxX !== minX && maxY !== minY) {
-      map.fitBounds([[minX, minY], [maxX, maxY]], { padding: 60, duration: 500 });
+    if (
+      [minX, minY, maxX, maxY].every((n) => Number.isFinite(n)) &&
+      maxX !== minX &&
+      maxY !== minY
+    ) {
+      map.fitBounds(
+        [
+          [minX, minY],
+          [maxX, maxY],
+        ],
+        { padding: 60, duration: 500 }
+      );
     } else {
       console.warn("[zone] bbox inválido, no se ajustan bounds");
     }
@@ -545,3 +834,21 @@ function fitToFeature(map: MapboxMap, feat: ZoneFeature) {
     console.warn("[zone] bbox error:", e);
   }
 }
+
+// Componente con carga dinámica para evitar hidratación
+const NewOrderMapboxPage = dynamic(
+  () => Promise.resolve(NewOrderMapboxPageClient),
+  {
+    ssr: false,
+    loading: () => (
+      <main className="space-y-4">
+        <h1 className="font-heading text-xl font-semibold">Nuevo pedido</h1>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-brand-500)]"></div>
+        </div>
+      </main>
+    ),
+  }
+);
+
+export default NewOrderMapboxPage;

@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import type { NextAuthOptions } from "next-auth"
 import bcrypt from "bcryptjs"
-import pool from "@/lib/db"
+import { prisma } from "@/lib/prisma"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -18,20 +18,24 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const client = await pool.connect()
-        
         try {
-          // Find user in database
-          const result = await client.query(
-            'SELECT id, name, email, password, role FROM users WHERE email = $1',
-            [credentials.email]
-          )
+          // Find user in database using Prisma
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email
+            },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              password: true,
+              role: true
+            }
+          })
           
-          if (result.rows.length === 0) {
+          if (!user) {
             return null
           }
-
-          const user = result.rows[0]
 
           // Compare password with bcrypt
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
@@ -46,8 +50,9 @@ export const authOptions: NextAuthOptions = {
             name: user.name,
             role: user.role
           }
-        } finally {
-          client.release()
+        } catch (error) {
+          console.error("Authentication error:", error)
+          return null
         }
       }
     }),

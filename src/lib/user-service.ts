@@ -1,0 +1,224 @@
+import { prisma } from './prisma'
+import type { User, Order, DeliveryPartner } from '../types/prisma'
+const bcrypt = require('bcryptjs')
+
+// User Service
+export class UserService {
+  static async createUser(data: {
+    name: string;
+    email: string;
+    password: string;
+    role?: string;
+  }) {
+    const hashedPassword = await bcrypt.hash(data.password, 12);
+    return prisma.user.create({
+      data: {
+        ...data,
+        password: hashedPassword,
+      },
+    });
+  }
+
+  static async getUserByEmail(email: string) {
+    return prisma.user.findUnique({
+      where: { email },
+    });
+  }
+
+  static async getUserById(id: number) {
+    return prisma.user.findUnique({
+      where: { id },
+      include: {
+        orders: true,
+      },
+    });
+  }
+
+  static async getAllUsers(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          _count: {
+            select: { orders: true },
+          },
+        },
+      }),
+      prisma.user.count(),
+    ]);
+
+    return {
+      users,
+      total,
+      pages: Math.ceil(total / limit),
+      currentPage: page,
+    };
+  }
+
+  static async updateUser(id: number, data: Partial<User>) {
+    if (data.password) {
+      data.password = await bcrypt.hash(data.password, 12);
+    }
+    return prisma.user.update({
+      where: { id },
+      data,
+    });
+  }
+
+  static async verifyPassword(plainPassword: string, hashedPassword: string) {
+    return bcrypt.compare(plainPassword, hashedPassword);
+  }
+}
+
+// Order Service
+export class OrderService {
+  static async createOrder(data: {
+    userId: number;
+    totalAmount?: number;
+    deliveryAddress?: string;
+  }) {
+    return prisma.order.create({
+      data,
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+  }
+
+  static async getOrderById(id: number) {
+    return prisma.order.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+  }
+
+  static async getOrdersByUser(userId: number) {
+    return prisma.order.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  static async getAllOrders(filters?: {
+    status?: string;
+    userId?: number;
+    page?: number;
+    limit?: number;
+  }) {
+    const { status, userId, page = 1, limit = 10 } = filters || {};
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (status) where.status = status;
+    if (userId) where.userId = userId;
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: { id: true, name: true, email: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    return {
+      orders,
+      total,
+      pages: Math.ceil(total / limit),
+      currentPage: page,
+    };
+  }
+
+  static async updateOrderStatus(id: number, status: string) {
+    return prisma.order.update({
+      where: { id },
+      data: { status },
+    });
+  }
+}
+
+// Delivery Partner Service
+export class DeliveryPartnerService {
+  static async createPartner(data: {
+    name: string;
+    email: string;
+    phone?: string;
+  }) {
+    return prisma.deliveryPartner.create({
+      data,
+    });
+  }
+
+  static async getAllPartners() {
+    return prisma.deliveryPartner.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  static async getPartnerById(id: number) {
+    return prisma.deliveryPartner.findUnique({
+      where: { id },
+    });
+  }
+
+  static async updatePartnerStatus(id: number, status: string) {
+    return prisma.deliveryPartner.update({
+      where: { id },
+      data: { status },
+    });
+  }
+}
+
+// Analytics Service
+export class AnalyticsService {
+  static async getDashboardStats() {
+    const [
+      totalUsers,
+      totalOrders,
+      totalPartners,
+      pendingOrders,
+      recentOrders,
+    ] = await Promise.all([
+      prisma.user.count(),
+      prisma.order.count(),
+      prisma.deliveryPartner.count({ where: { status: "active" } }),
+      prisma.order.count({ where: { status: "pending" } }),
+      prisma.order.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: {
+            select: { name: true, email: true },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      totalUsers,
+      totalOrders,
+      totalPartners,
+      pendingOrders,
+      recentOrders,
+    };
+  }
+}

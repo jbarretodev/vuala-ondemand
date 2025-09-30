@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
-import pool from "@/lib/db"
+import { prisma } from "@/lib/prisma"
 
 export async function POST(request: NextRequest) {
-  const client = await pool.connect()
-  
   try {
     const { name, email, password } = await request.json()
 
@@ -30,13 +28,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user already exists
-    const existingUserResult = await client.query(
-      'SELECT id FROM users WHERE email = $1',
-      [email]
-    )
+    // Check if user already exists using Prisma
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    })
     
-    if (existingUserResult.rows.length > 0) {
+    if (existingUser) {
       return NextResponse.json(
         { message: "Ya existe una cuenta con este correo electrónico." },
         { status: 409 }
@@ -46,13 +43,22 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create new user in database
-    const insertResult = await client.query(
-      'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role, created_at',
-      [name, email, hashedPassword, 'user']
-    )
-
-    const newUser = insertResult.rows[0]
+    // Create new user in database using Prisma
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: 'user'
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true
+      }
+    })
     
     return NextResponse.json(
       { 
@@ -62,7 +68,7 @@ export async function POST(request: NextRequest) {
           name: newUser.name,
           email: newUser.email,
           role: newUser.role,
-          createdAt: newUser.created_at
+          createdAt: newUser.createdAt
         }
       },
       { status: 201 }
@@ -74,8 +80,6 @@ export async function POST(request: NextRequest) {
       { message: "Error interno del servidor." },
       { status: 500 }
     )
-  } finally {
-    client.release()
   }
 }
 

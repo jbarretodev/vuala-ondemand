@@ -5,32 +5,31 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 
-type NavItem= {
-  label:String;
-  href:String;
+type NavItem = {
+  label: string;
+  href: string;
 };
 
 const NAV_ITEMS: NavItem[] = [
-  {label:"Inicio", href:"/"},
-  {label:"Particulares", href:"/particulares"},
-  {label:"Empresas/Partners", href:"/empresas"},
-  {label:"Productos", href:"/productos"},
-  {label:"Precios", href:"/precios"},
-  {label:"Contacto", href:"/contacto"},
+  { label: "Inicio", href: "/" },
+  { label: "Particulares", href: "/particulares" },
+  { label: "Empresas/Partners", href: "/empresas" },
+  { label: "Productos", href: "/productos" },
+  { label: "Precios", href: "/precios" },
+  { label: "Contacto", href: "/contacto" },
 ];
 
-export default function Nabvar(){
+export default function Navbar() {
   const pathname = usePathname();
-  const [open, setOpen ] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const isActive = (href: string) => 
     href === "/"
-      ?pathname === "/"
-      :pathname.startsWith(href);
+      ? pathname === "/"
+      : pathname.startsWith(href);
 
-  return(
-    
-  <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/70">
+  return (
+    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/70">
   <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6">
     {/* Brand con logo */}
     <div className="flex items-center gap-3">
@@ -52,10 +51,10 @@ export default function Nabvar(){
       {NAV_ITEMS.map((item) => (
         <li key={item.href}>
           <Link
-            href={item.href}
+            href={item.href as string}
             className={[
               "rounded-xl px-3 py-2 text-sm transition",
-              isActive(item.href)
+              isActive(item.href as string)
                 ? "bg-blue-500 text-white dark:bg-white dark:text-gray-900"
                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white",
             ].join(" ")}
@@ -108,13 +107,13 @@ export default function Nabvar(){
     <div className="border-t border-gray-200 md:hidden dark:border-gray-800">
       <ul className="space-y-1 px-4 py-3">
         {NAV_ITEMS.map((item) => (
-          <li key={item.href}>
+          <li key={item.href as string}>
             <Link
-              href={item.href}
+              href={item.href as string}
               onClick={() => setOpen(false)}
               className={[
                 "block rounded-xl px-3 py-2 text-sm transition",
-                isActive(item.href)
+                isActive(item.href as string)
                   ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
                   : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800",
               ].join(" ")}
@@ -144,7 +143,7 @@ export default function Nabvar(){
       </ul>
     </div>
   )}
-</header>
-);
+    </header>
+  );
 }
 
