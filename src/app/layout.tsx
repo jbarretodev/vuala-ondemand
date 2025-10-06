@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import AuthSessionProvider from "@/components/providers/SessionProvider";
+import ToasterProvider from "@/components/providers/ToasterProvider";
 /*
 import { Geist, Geist_Mono } from "next/font/google";
 const geistSans = Geist({
@@ -42,6 +43,7 @@ export default function RootLayout({
         className={`${inter.variable} ${poppins.variable} antialiased`}
       >
         <AuthSessionProvider>
+          <ToasterProvider />
           {children}
         </AuthSessionProvider>
       </body>
