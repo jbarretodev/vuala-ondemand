@@ -29,17 +29,17 @@ model Role {
 
 // User model matching the SQL users table
 model User {
-  id          Int      @id @default(autoincrement())
-  username    String   @unique @db.VarChar(100)
-  name        String   @db.VarChar(255)
-  email       String   @unique @db.VarChar(255)
-  password    String   @db.VarChar(255)
-  roleId      Int      @map("role_id")
-  avatar      String?  @db.VarChar(500)
-  providerId  String?  @map("provider_id") @db.VarChar(255)
-  providerName String? @map("provider_name") @db.VarChar(50)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           Int      @id @default(autoincrement())
+  username     String   @unique @db.VarChar(100)
+  name         String   @db.VarChar(255)
+  email        String   @unique @db.VarChar(255)
+  password     String   @db.VarChar(255)
+  roleId       Int      @map("role_id")
+  avatar       String?  @db.VarChar(500)
+  providerId   String?  @map("provider_id") @db.VarChar(255)
+  providerName String?  @map("provider_name") @db.VarChar(50)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
   role      Role       @relation(fields: [roleId], references: [id])
@@ -53,15 +53,15 @@ model User {
 
 // Customer model - intermediate between User and Order
 model Customer {
-  id        Int      @id @default(autoincrement())
-  name      String   @db.VarChar(255)
-  lastname  String   @db.VarChar(255)
-  address   String?  @db.Text
-  dni       String   @unique @db.VarChar(50)
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  lastname  String    @db.VarChar(255)
+  address   String?   @db.Text
+  dni       String    @unique @db.VarChar(50)
   dob       DateTime? @map("date_of_birth")
-  userId    Int      @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  userId    Int       @map("user_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
   // Relations
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -74,27 +74,27 @@ model Customer {
 
 // Order model matching the SQL orders table
 model Order {
-  id              Int      @id @default(autoincrement())
-  customerId      Int      @map("customer_id")
-  status          String   @default("pending") @db.VarChar(50)
-  
+  id         Int    @id @default(autoincrement())
+  customerId Int    @map("customer_id")
+  status     String @default("pending") @db.VarChar(50)
+
   // Delivery details
-  pickupAddress   String?  @map("pickup_address") @db.Text
-  deliveryAddress String?  @map("delivery_address") @db.Text
-  
+  pickupAddress   String? @map("pickup_address") @db.Text
+  deliveryAddress String? @map("delivery_address") @db.Text
+
   // Scheduling
-  isScheduled     Boolean  @default(false) @map("is_scheduled")
-  scheduledDate   DateTime? @map("scheduled_date")
-  scheduledTime   String?  @map("scheduled_time") @db.VarChar(10)
-  
+  isScheduled   Boolean   @default(false) @map("is_scheduled")
+  scheduledDate DateTime? @map("scheduled_date")
+  scheduledTime String?   @map("scheduled_time") @db.VarChar(10)
+
   // Route information
-  distanceKm      Decimal? @map("distance_km") @db.Decimal(10, 2)
-  estimatedTime   String?  @map("estimated_time") @db.VarChar(50)
-  estimatedPrice  Decimal? @map("estimated_price") @db.Decimal(10, 2)
-  totalAmount     Decimal? @map("total_amount") @db.Decimal(10, 2)
-  
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  distanceKm     Decimal? @map("distance_km") @db.Decimal(10, 2)
+  estimatedTime  String?  @map("estimated_time") @db.VarChar(50)
+  estimatedPrice Decimal? @map("estimated_price") @db.Decimal(10, 2)
+  totalAmount    Decimal? @map("total_amount") @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
@@ -113,4 +113,52 @@ model DeliveryPartner {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("delivery_partners")
+}
+
+//Courier Model 
+
+enum CourierStatus {
+  OFFLINE //desconectado
+  IDLE //conectado / esperando pedido
+  ON_DELIVERY //con pedido  
+}
+
+model Courier {
+  id        String               @id @default(cuid())
+  name      String
+  status    CourierStatus        @default(OFFLINE)
+  last      CourierLastLocation?
+  locations CourierLocation[]
+  updatedAt DateTime             @updatedAt
+  createdAt DateTime             @default(now())
+}
+
+model CourierLastLocation {
+  courierId String   @id
+  courier   Courier  @relation(fields: [courierId], references: [id], onDelete: Cascade)
+  lat       Float
+  lng       Float
+  speed     Float? //velocidad del courier
+  heading   Float? //direccion engrados 
+  accurracy Float? //precision del gps 
+  battery   Int? //bateria del movil
+  ts        DateTime //fecha y hora de la ultima actualización
+
+  @@index([courierId, ts])
+}
+
+//Historial completo de las localizaciones 
+
+model CourierLocation {
+  id        BigInt   @id @default(autoincrement())
+  courierId String
+  courier   Courier  @relation(fields: [courierId], references: [id], onDelete: Cascade)
+  lat       Float
+  lng       Float
+  speed     Float?
+  heading   Float?
+  accuracy  Float?
+  ts        DateTime
+
+  @@index([courierId, ts])
 }
