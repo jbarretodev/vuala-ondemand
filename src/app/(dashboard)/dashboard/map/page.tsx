@@ -145,7 +145,7 @@ function AddressInput({
             query
           )}.json`
         );
-        url.searchParams.set("access_token", token);
+        url.searchParams.set("access_token", token || '');
         url.searchParams.set("language", "es");
         url.searchParams.set("limit", "5");
         const res = await fetch(url.toString());
@@ -284,8 +284,38 @@ function NewOrderMapboxPageClient() {
   const [hasRoute, setHasRoute] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Couriers state
+  const [couriers, setCouriers] = useState<any[]>([]);
+  const courierMarkersRef = useRef<mapboxgl.Marker[]>([]);
+
   // bandera de mapa listo (fix appendChild)
   const isMapReadyRef = useRef(false);
+
+  /* ====== cargar couriers ====== */
+  useEffect(() => {
+    const fetchCouriers = async () => {
+      try {
+        // Fetch only IDLE and ON_DELIVERY couriers
+        const response = await fetch('/api/riders?status=IDLE');
+        const data = await response.json();
+        const idleCouriers = data.riders || [];
+
+        const response2 = await fetch('/api/riders?status=ON_DELIVERY');
+        const data2 = await response2.json();
+        const onDeliveryCouriers = data2.riders || [];
+
+        const allCouriers = [...idleCouriers, ...onDeliveryCouriers];
+        setCouriers(allCouriers);
+      } catch (error) {
+        console.error('Error fetching couriers:', error);
+      }
+    };
+
+    fetchCouriers();
+    // Refresh every 10 seconds
+    const interval = setInterval(fetchCouriers, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   /* ====== cargar polígono (zona) ====== */
   useEffect(() => {
@@ -325,8 +355,8 @@ function NewOrderMapboxPageClient() {
     const map = new mapboxgl.Map({
       container: containerRef.current,
       style: "mapbox://styles/mapbox/streets-v12",
-      center: [2.1686, 41.3874], // se actualizará con fitBounds cuando llegue zone
-      zoom: 12,
+      center: [-2.4637, 36.8402], // Almería, España
+      zoom: 13,
     });
 
     map.addControl(
@@ -363,6 +393,8 @@ function NewOrderMapboxPageClient() {
       // limpieza para evitar referencias colgantes y errores en Fast Refresh
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
+      courierMarkersRef.current.forEach((m) => m.remove());
+      courierMarkersRef.current = [];
       isMapReadyRef.current = false;
       map.off("load", onLoad);
       map.remove();
@@ -411,6 +443,81 @@ function NewOrderMapboxPageClient() {
     }
   }, [pickup?.lat, pickup?.lng, dropoff?.lat, dropoff?.lng]);
 
+  /* ====== marcadores de couriers ====== */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMapReadyRef.current) return;
+
+    // Limpiar marcadores de couriers anteriores
+    courierMarkersRef.current.forEach((m) => m.remove());
+    courierMarkersRef.current = [];
+
+    // Crear marcadores para cada courier
+    couriers.forEach((courier) => {
+      if (!courier.lastLocation) return;
+
+      const { lat, lng } = courier.lastLocation;
+
+      // Color según estado
+      const color = courier.status === 'IDLE' ? '#10B981' : '#F59E0B'; // Verde: disponible, Naranja: en delivery
+
+      // Crear elemento HTML personalizado para el marcador
+      const el = document.createElement('div');
+      el.className = 'courier-marker';
+      el.style.cssText = `
+        width: 32px;
+        height: 32px;
+        background-color: ${color};
+        border: 3px solid white;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+      `;
+      
+      // Icono según tipo de vehículo
+      const vehicleIcons: Record<string, string> = {
+        MOTORCYCLE: '🏍️',
+        CAR: '🚗',
+        BICYCLE: '🚲',
+        SCOOTER: '🛵',
+      };
+      el.textContent = vehicleIcons[courier.vehicle?.type] || '🚚';
+
+      // Crear popup con información del courier
+      const popupContent = `
+        <div style="padding: 12px 16px; min-width: 200px;">
+          <h3 style="font-weight: 600; margin: 0 20px 10px 0; font-size: 14px; padding-right: 10px;">${courier.user.name}</h3>
+          <div style="font-size: 12px; color: #666; line-height: 1.8;">
+            <div><strong>Status:</strong> ${courier.status === 'IDLE' ? 'Available' : 'On Delivery'}</div>
+            <div><strong>Vehicle:</strong> ${courier.vehicle?.brand || ''} ${courier.vehicle?.model || ''}</div>
+            <div><strong>Plate:</strong> ${courier.vehicle?.licensePlate || 'N/A'}</div>
+            <div><strong>Rating:</strong> ${courier.rating ? Number(courier.rating).toFixed(1) : 'N/A'} ⭐</div>
+            <div><strong>Deliveries:</strong> ${courier.completedOrders}</div>
+            ${courier.lastLocation?.battery ? `<div><strong>Battery:</strong> ${courier.lastLocation.battery}%</div>` : ''}
+          </div>
+        </div>
+      `;
+
+      const popup = new mapboxgl.Popup({ 
+        offset: 25,
+        closeButton: true,
+        closeOnClick: false,
+        maxWidth: '280px'
+      }).setHTML(popupContent);
+
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat([lng, lat])
+        .setPopup(popup)
+        .addTo(map);
+
+      courierMarkersRef.current.push(marker);
+    });
+  }, [couriers]);
+
   /* ====== pedir ruta a Mapbox Directions ====== */
   useEffect(() => {
     const fetchRoute = async () => {
@@ -433,7 +540,7 @@ function NewOrderMapboxPageClient() {
         url.searchParams.set("alternatives", "false");
         url.searchParams.set("geometries", "geojson");
         url.searchParams.set("overview", "full");
-        url.searchParams.set("access_token", mapboxgl.accessToken);
+        url.searchParams.set("access_token", mapboxgl.accessToken || '');
 
         const res = await fetch(url.toString());
         const data = await res.json();
@@ -503,7 +610,7 @@ function NewOrderMapboxPageClient() {
   /* ====== centro del mapa ====== */
   const center: LngLatLike = useMemo<LngLatLike>(() => {
     if (pickup) return [pickup.lng, pickup.lat];
-    return [2.1686, 41.3874];
+    return [-2.4637, 36.8402]; // Almería, España
   }, [pickup]);
 
   const price = useMemo(
@@ -561,22 +668,110 @@ function NewOrderMapboxPageClient() {
     }
   };
 
+  const availableCouriers = couriers.filter(c => c.status === 'IDLE').length;
+  const onDeliveryCouriers = couriers.filter(c => c.status === 'ON_DELIVERY').length;
+
   return (
-    <main className="space-y-4">
+    <>
+      <style jsx global>{`
+        .mapboxgl-popup-content {
+          padding: 0 !important;
+          border-radius: 8px !important;
+        }
+        
+        .mapboxgl-popup-close-button {
+          font-size: 20px !important;
+          padding: 6px 8px !important;
+          margin: 4px !important;
+          color: #666 !important;
+          background: transparent !important;
+          border: none !important;
+          cursor: pointer !important;
+          transition: all 0.2s !important;
+        }
+        
+        .mapboxgl-popup-close-button:hover {
+          color: #000 !important;
+          background: rgba(0, 0, 0, 0.05) !important;
+          border-radius: 4px !important;
+        }
+        
+        .mapboxgl-popup-tip {
+          border-top-color: white !important;
+        }
+      `}</style>
+      
+      <main className="space-y-4">
+        {/* Stats Bar */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-lg border border-neutral-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-lg">
+              🟢
+            </div>
+            <div>
+              <p className="text-sm text-neutral-600">Available Couriers</p>
+              <p className="text-2xl font-bold text-green-600">{availableCouriers}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg border border-neutral-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-lg">
+              🟠
+            </div>
+            <div>
+              <p className="text-sm text-neutral-600">On Delivery</p>
+              <p className="text-2xl font-bold text-orange-600">{onDeliveryCouriers}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg border border-neutral-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-lg">
+              🚚
+            </div>
+            <div>
+              <p className="text-sm text-neutral-600">Total Active</p>
+              <p className="text-2xl font-bold text-blue-600">{couriers.length}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-1">
-        {/* Derecha: mapa */}
+        {/* Mapa */}
         <div className="rounded-2xl border border-neutral-200 bg-white p-2 md:p-3">
-          <div className="aspect-[4/3] w-full overflow-hidden rounded-xl">
+          <div className="aspect-[4/3] w-full overflow-hidden rounded-xl relative">
             <div ref={containerRef} className="h-full w-full" />
+            
+            {/* Legend */}
+            <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-3 text-xs z-10">
+              <h4 className="font-semibold mb-2 text-sm">Courier Status</h4>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow"></div>
+                  <span>Available ({availableCouriers})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-orange-500 border-2 border-white shadow"></div>
+                  <span>On Delivery ({onDeliveryCouriers})</span>
+                </div>
+              </div>
+              <div className="mt-3 pt-2 border-t border-neutral-200 text-neutral-500">
+                Updates every 10s
+              </div>
+            </div>
           </div>
           <p className="mt-2 text-xs text-neutral-500">
-            La zona (azul) delimita el área de servicio. Ambas direcciones deben
-            estar dentro.
+            Click on courier markers to view details. The map shows real-time courier locations.
           </p>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   );
 }
 
