@@ -5,16 +5,20 @@ const bcrypt = require('bcryptjs')
 // User Service
 export class UserService {
   static async createUser(data: {
+    username: string;
     name: string;
     email: string;
     password: string;
-    role?: string;
+    roleId?: number;
   }) {
     const hashedPassword = await bcrypt.hash(data.password, 12);
     return prisma.user.create({
       data: {
-        ...data,
+        username: data.username,
+        name: data.name,
+        email: data.email,
         password: hashedPassword,
+        roleId: data.roleId || 2, // default to customer
       },
     });
   }
@@ -29,7 +33,8 @@ export class UserService {
     return prisma.user.findUnique({
       where: { id },
       include: {
-        orders: true,
+        role: true,
+        customers: true,
       },
     });
   }
@@ -42,12 +47,18 @@ export class UserService {
         take: limit,
         select: {
           id: true,
+          username: true,
           name: true,
           email: true,
-          role: true,
+          role: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
           createdAt: true,
           _count: {
-            select: { orders: true },
+            select: { customers: true },
           },
         },
       }),
@@ -62,7 +73,16 @@ export class UserService {
     };
   }
 
-  static async updateUser(id: number, data: Partial<User>) {
+  static async updateUser(id: number, data: {
+    username?: string;
+    name?: string;
+    email?: string;
+    password?: string;
+    roleId?: number;
+    avatar?: string | null;
+    providerId?: string | null;
+    providerName?: string | null;
+  }) {
     if (data.password) {
       data.password = await bcrypt.hash(data.password, 12);
     }
@@ -80,15 +100,24 @@ export class UserService {
 // Order Service
 export class OrderService {
   static async createOrder(data: {
-    userId: number;
+    customerId: number;
     totalAmount?: number;
     deliveryAddress?: string;
+    pickupAddress?: string;
+    status?: string;
   }) {
     return prisma.order.create({
       data,
       include: {
-        user: {
-          select: { id: true, name: true, email: true },
+        customer: {
+          select: { 
+            id: true, 
+            name: true, 
+            lastname: true,
+            user: {
+              select: { email: true }
+            }
+          },
         },
       },
     });
@@ -98,32 +127,39 @@ export class OrderService {
     return prisma.order.findUnique({
       where: { id },
       include: {
-        user: {
-          select: { id: true, name: true, email: true },
+        customer: {
+          select: { 
+            id: true, 
+            name: true, 
+            lastname: true,
+            user: {
+              select: { email: true }
+            }
+          },
         },
       },
     });
   }
 
-  static async getOrdersByUser(userId: number) {
+  static async getOrdersByCustomer(customerId: number) {
     return prisma.order.findMany({
-      where: { userId },
+      where: { customerId },
       orderBy: { createdAt: "desc" },
     });
   }
 
   static async getAllOrders(filters?: {
     status?: string;
-    userId?: number;
+    customerId?: number;
     page?: number;
     limit?: number;
   }) {
-    const { status, userId, page = 1, limit = 10 } = filters || {};
+    const { status, customerId, page = 1, limit = 10 } = filters || {};
     const skip = (page - 1) * limit;
 
     const where: any = {};
     if (status) where.status = status;
-    if (userId) where.userId = userId;
+    if (customerId) where.customerId = customerId;
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
@@ -131,8 +167,15 @@ export class OrderService {
         skip,
         take: limit,
         include: {
-          user: {
-            select: { id: true, name: true, email: true },
+          customer: {
+            select: { 
+              id: true, 
+              name: true, 
+              lastname: true,
+              user: {
+                select: { email: true }
+              }
+            },
           },
         },
         orderBy: { createdAt: "desc" },
@@ -206,8 +249,14 @@ export class AnalyticsService {
         take: 5,
         orderBy: { createdAt: "desc" },
         include: {
-          user: {
-            select: { name: true, email: true },
+          customer: {
+            select: { 
+              name: true, 
+              lastname: true,
+              user: {
+                select: { email: true }
+              }
+            },
           },
         },
       }),

@@ -24,12 +24,14 @@ export const authOptions: NextAuthOptions = {
             where: {
               email: credentials.email
             },
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              password: true,
-              role: true
+            include: {
+              role: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true
+                }
+              }
             }
           })
           
@@ -48,7 +50,7 @@ export const authOptions: NextAuthOptions = {
             id: user.id.toString(),
             email: user.email,
             name: user.name,
-            role: user.role
+            role: user.role.name
           }
         } catch (error) {
           console.error("Authentication error:", error)

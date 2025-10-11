@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:riders": "tsx prisma/seed-riders.ts",
+    "db:seed:100riders": "tsx prisma/seed-100-riders.ts",
+    "db:reset:riders": "tsx prisma/reset-and-seed-riders.ts",
     "db:reset": "prisma migrate reset --force && npm run db:seed",
     "db:studio": "prisma studio"
   },

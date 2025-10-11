@@ -14,9 +14,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Obtener el usuario de la base de datos
+    // Obtener el usuario de la base de datos con su cliente asociado
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      include: {
+        customers: true,
+      },
     });
 
     if (!user) {
@@ -26,11 +29,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verificar que el usuario tenga un cliente asociado
+    if (!user.customers || user.customers.length === 0) {
+      return NextResponse.json(
+        { error: "No hay cliente asociado a este usuario" },
+        { status: 400 }
+      );
+    }
+
+    const customer = user.customers[0];
+
     // Parsear el body
     const body = await request.json();
     const {
-      customerName,
-      customerLastName,
       pickupAddress,
       deliveryAddress,
       isScheduled,
@@ -40,14 +51,6 @@ export async function POST(request: NextRequest) {
       estimatedTime,
       estimatedPrice,
     } = body;
-
-    // Validaciones básicas
-    if (!customerName || !customerLastName) {
-      return NextResponse.json(
-        { error: "Nombre y apellido son requeridos" },
-        { status: 400 }
-      );
-    }
 
     if (!pickupAddress || !deliveryAddress) {
       return NextResponse.json(
@@ -74,9 +77,7 @@ export async function POST(request: NextRequest) {
     // Crear la orden
     const order = await prisma.order.create({
       data: {
-        userId: user.id,
-        customerName,
-        customerLastName,
+        customerId: customer.id,
         pickupAddress,
         deliveryAddress,
         isScheduled: isScheduled || false,
@@ -88,6 +89,15 @@ export async function POST(request: NextRequest) {
         totalAmount: parseFloat(estimatedPrice), // Por ahora el total es igual al precio estimado
         status: "pending",
       },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            lastname: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(
@@ -95,8 +105,10 @@ export async function POST(request: NextRequest) {
         success: true,
         order: {
           id: order.id,
-          customerName: order.customerName,
-          customerLastName: order.customerLastName,
+          customer: {
+            name: order.customer.name,
+            lastname: order.customer.lastname,
+          },
           pickupAddress: order.pickupAddress,
           deliveryAddress: order.deliveryAddress,
           isScheduled: order.isScheduled,
@@ -133,9 +145,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Obtener el usuario de la base de datos
+    // Obtener el usuario de la base de datos con sus clientes
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      include: {
+        customers: true,
+      },
     });
 
     if (!user) {
@@ -145,10 +160,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Obtener las órdenes del usuario
+    if (!user.customers || user.customers.length === 0) {
+      return NextResponse.json({ orders: [] }, { status: 200 });
+    }
+
+    const customerIds = user.customers.map(c => c.id);
+
+    // Obtener las órdenes de los clientes del usuario
     const orders = await prisma.order.findMany({
-      where: { userId: user.id },
+      where: { 
+        customerId: {
+          in: customerIds
+        }
+      },
       orderBy: { createdAt: "desc" },
+      include: {
+        customer: {
+          select: {
+            name: true,
+            lastname: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json({ orders }, { status: 200 });

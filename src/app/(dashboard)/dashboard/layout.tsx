@@ -8,13 +8,16 @@ import { usePathname } from "next/navigation";
 
 const NAV = [
   { label:"Inicio" , href: "/dashboard" },
+  { label:" Mapa ", href: "/dashboard/map"},
   { label:"Clientes" , href: "/dashboard/clientes" },
   { label:"Pedidos" , href: "/dashboard/orders" },
+  { label:"Couriers" , href: "/dashboard/riders" },
   { label:"Facturación" , href: "/dashboard/" },
   { label:"Ajustes" , href: "/dashboard/settings" },
   { label:"Perfil " , href: "/dashboard/profile" },
   { label:"Salir" , href: "" },
 ];
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
