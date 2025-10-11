@@ -1,22 +1,51 @@
 // Prisma types - manually defined to avoid import issues
+export interface Role {
+  id: number
+  name: string
+  description: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
 export interface User {
   id: number
+  username: string
   name: string
   email: string
   password: string
-  role: string
+  roleId: number
+  avatar: string | null
   providerId: string | null
   providerName: string | null
   createdAt: Date
   updatedAt: Date
 }
 
+export interface Customer {
+  id: number
+  name: string
+  lastname: string
+  address: string | null
+  dni: string
+  dob: Date | null
+  userId: number
+  createdAt: Date
+  updatedAt: Date
+}
+
 export interface Order {
   id: number
-  userId: number
+  customerId: number
   status: string
-  totalAmount: number | null
+  pickupAddress: string | null
   deliveryAddress: string | null
+  isScheduled: boolean
+  scheduledDate: Date | null
+  scheduledTime: string | null
+  distanceKm: number | null
+  estimatedTime: string | null
+  estimatedPrice: number | null
+  totalAmount: number | null
   createdAt: Date
   updatedAt: Date
 }
@@ -31,10 +60,18 @@ export interface DeliveryPartner {
 }
 
 // Extended types with relations
-export interface UserWithOrders extends User {
-  orders: Order[]
+export interface UserWithRole extends User {
+  role: Role
 }
 
-export interface OrderWithUser extends Order {
-  user: Pick<User, 'id' | 'name' | 'email'>
+export interface UserWithCustomers extends User {
+  customers: Customer[]
+}
+
+export interface CustomerWithUser extends Customer {
+  user: Pick<User, 'id' | 'username' | 'name' | 'email'>
+}
+
+export interface OrderWithCustomer extends Order {
+  customer: CustomerWithUser
 }

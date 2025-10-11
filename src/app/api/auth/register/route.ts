@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
           name: firstName,
           email,
           password: hashedPassword,
-          role: 'user'
+          roleId: 2 // customer role
         }
       });
 
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
           username: result.user.username,
           name: result.user.name,
           email: result.user.email,
-          role: result.user.role,
+          roleId: result.user.roleId,
           createdAt: result.user.createdAt
         },
         customer: {
