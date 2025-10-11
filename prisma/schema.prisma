@@ -44,6 +44,7 @@ model User {
   // Relations
   role      Role       @relation(fields: [roleId], references: [id])
   customers Customer[]
+  riders    Rider[]
 
   @@index([email])
   @@index([username])
@@ -76,6 +77,7 @@ model Customer {
 model Order {
   id              Int      @id @default(autoincrement())
   customerId      Int      @map("customer_id")
+  riderId         Int?     @map("rider_id")
   status          String   @default("pending") @db.VarChar(50)
   
   // Delivery details
@@ -98,8 +100,10 @@ model Order {
 
   // Relations
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  rider    Rider?   @relation(fields: [riderId], references: [id], onDelete: SetNull)
 
   @@index([customerId])
+  @@index([riderId])
   @@map("orders")
 }
 
@@ -113,4 +117,103 @@ model DeliveryPartner {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("delivery_partners")
+}
+
+// Rider Status Enum
+enum RiderStatus {
+  OFFLINE
+  IDLE
+  ON_DELIVERY
+}
+
+// Vehicle Type Enum
+enum VehicleType {
+  MOTORCYCLE
+  CAR
+  BICYCLE
+  SCOOTER
+}
+
+// Rider model - represents delivery riders/couriers
+model Rider {
+  id              Int          @id @default(autoincrement())
+  userId          Int          @unique @map("user_id")
+  status          RiderStatus  @default(OFFLINE)
+  phone           String       @db.VarChar(20)
+  licenseNumber   String?      @map("license_number") @db.VarChar(100)
+  isActive        Boolean      @default(true) @map("is_active")
+  rating          Decimal?     @db.Decimal(3, 2) // 0.00 - 5.00
+  completedOrders Int          @default(0) @map("completed_orders")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle       Vehicle?
+  lastLocation  RiderLastLocation?
+  locations     RiderLocation[]
+  orders        Order[]
+
+  @@index([status])
+  @@index([userId])
+  @@index([isActive])
+  @@map("riders")
+}
+
+// Vehicle model - rider's transportation
+model Vehicle {
+  id            Int         @id @default(autoincrement())
+  riderId       Int         @unique @map("rider_id")
+  type          VehicleType
+  brand         String?     @db.VarChar(100)
+  model         String?     @db.VarChar(100)
+  year          Int?
+  licensePlate  String      @unique @map("license_plate") @db.VarChar(20)
+  color         String?     @db.VarChar(50)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  rider Rider @relation(fields: [riderId], references: [id], onDelete: Cascade)
+
+  @@index([riderId])
+  @@map("vehicles")
+}
+
+// Rider Last Location - stores only the most recent location (1-1)
+model RiderLastLocation {
+  riderId   Int      @id @map("rider_id")
+  lat       Float    @db.DoublePrecision
+  lng       Float    @db.DoublePrecision
+  speed     Float?   @db.DoublePrecision
+  heading   Float?   @db.DoublePrecision
+  accuracy  Float?   @db.DoublePrecision
+  battery   Int?
+  source    String?  @db.VarChar(20) // ios/android/web
+  timestamp DateTime @map("ts")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  rider Rider @relation(fields: [riderId], references: [id], onDelete: Cascade)
+
+  @@index([timestamp])
+  @@map("rider_last_locations")
+}
+
+// Rider Location History - stores all location updates (1-N)
+model RiderLocation {
+  id        BigInt   @id @default(autoincrement())
+  riderId   Int      @map("rider_id")
+  lat       Float    @db.DoublePrecision
+  lng       Float    @db.DoublePrecision
+  speed     Float?   @db.DoublePrecision
+  heading   Float?   @db.DoublePrecision
+  accuracy  Float?   @db.DoublePrecision
+  timestamp DateTime @map("ts")
+
+  // Relations
+  rider Rider @relation(fields: [riderId], references: [id], onDelete: Cascade)
+
+  @@index([riderId, timestamp])
+  @@map("rider_locations")
 }
