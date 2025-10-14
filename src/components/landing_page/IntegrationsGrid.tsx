@@ -33,7 +33,7 @@ export default function IntegrationsGrid() {
               className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition
                          hover:border-sky-200 hover:shadow-md"
             >
-              <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-slate-50 ring-1 ring-slate-200">
+              <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden">
                 <Image
                   src={it.logo}
                   alt={`${it.name} logo`}

@@ -2,7 +2,7 @@ import { Button } from "flowbite-react";
 
 export default function CTASection() {
   return (
-    <div className="bg-blue-500 min-h-screen flex flex-col items-center justify-center text-white px-4">
+    <div className="bg-blue-500 min-h-[350px] flex flex-col items-center justify-center text-white px-4">
   <h1 className="text-4xl md:text-5xl font-bold text-center mb-6">
     ¿Aún no eres Partner de Vualá?
   </h1>
