@@ -28,21 +28,21 @@ export default function Navbar() {
       ? pathname === "/"
       : pathname.startsWith(href);
 
-  return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/70">
-  <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6">
+  return(
+    
+  <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/70">
+  <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
     {/* Brand con logo */}
     <div className="flex items-center gap-3">
       <Link href="/" className="flex items-center gap-2">
         <Image
-          src="/logo.png" 
+          src="/logos/vuala.png" 
           alt="Logo Vuala"
-          width={40}
+          width={80}
           height={40}
-          className="h-10 w-10 object-contain"
+          className="h-10 w-30 object-contain"
           priority
         />
-        <span className="text-lg font-semibold tracking-tight">Vuala</span>
       </Link>
     </div>
 
