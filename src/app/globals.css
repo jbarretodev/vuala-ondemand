@@ -16,6 +16,8 @@
     --color-brand-500: #3D5AFE;
     --color-brand-100: #E0E7FF;
     --color-brand-50:  #F5F8FF;
+
+    --color-brand-200:var(--color-warning)
   
     /* Neutral */
     --color-neutral-900: #111827;
@@ -34,7 +36,20 @@
   --font-poppins: "Poppins", sans-serif;
 }
 
+.alto {
+  height: 600px;
+}
+.txt-hero{
+  font-size: 72px;
+  margin-top: 150px;
+}
 
+.about{
+  margin-top: 72px;
+}
+.text-16px { font-size: 16px; line-height: 1.2; }
+.text-32px { font-size: 32px; line-height: 1.2; }
+.text-60px { font-size: 60px; line-height: 1.2; }
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

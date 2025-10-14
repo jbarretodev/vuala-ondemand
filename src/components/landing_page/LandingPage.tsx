@@ -7,13 +7,21 @@ import CTASection from "./CTASection";
 import FAQSection from "./FAQSection";
 import Footer from "./Footer";
 import Nabvar from "./Navbar";
+import StatsStrip from "./StatsStrip";
+import AboutSection from "./AboutSection";
+import SmartSolutions from "./SmartSolutions";
+import IntegrationsGrid from "./IntegrationsGrid";
+
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen">
       <Nabvar/>
       <HeroSection />
-      <WhatIsOnDemandSection />
+      <StatsStrip/>
+      <AboutSection/>
+      <SmartSolutions/>
+      <IntegrationsGrid/>
       <FeaturesSection />
       <PartnersSection />
       <DeliveryTypesSection />
