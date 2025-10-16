@@ -12,7 +12,13 @@
     "db:seed:100riders": "tsx prisma/seed-100-riders.ts",
     "db:reset:riders": "tsx prisma/reset-and-seed-riders.ts",
     "db:reset": "prisma migrate reset --force && npm run db:seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:sync": "prisma generate && prisma db push",
+    "db:sync:seed": "prisma generate && prisma db push && npm run db:seed",
+    "db:migrate:status": "prisma migrate status",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "postpull": "npm install && npm run db:sync",
+    "postpull:pnpm": "pnpm install && pnpm run db:sync"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
