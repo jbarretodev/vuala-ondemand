@@ -57,7 +57,8 @@ type Rider = {
 };
 
 export default function AssignOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
+  const [assignedOrders, setAssignedOrders] = useState<Order[]>([]);
   const [riders, setRiders] = useState<Rider[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState<number | null>(null);
@@ -70,14 +71,22 @@ export default function AssignOrdersPage() {
     setLoading(true);
     try {
       const [ordersRes, ridersRes] = await Promise.all([
-        fetch("/api/orders?status=pending&all=true"),
+        fetch("/api/orders?all=true"),
         fetch("/api/riders/available"),
       ]);
 
       if (ordersRes.ok && ridersRes.ok) {
         const ordersData = await ordersRes.json();
         const ridersData = await ridersRes.json();
-        setOrders(ordersData.orders || []);
+        
+        const allOrders = ordersData.orders || [];
+        
+        // Separar órdenes pendientes (sin rider) y asignadas (con rider)
+        const pending = allOrders.filter((order: Order) => !order.rider && order.status === "pending");
+        const assigned = allOrders.filter((order: Order) => order.rider && order.status === "pending");
+        
+        setPendingOrders(pending);
+        setAssignedOrders(assigned);
         setRiders(ridersData.riders || []);
       }
     } catch (error) {
@@ -147,11 +156,17 @@ export default function AssignOrdersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white border border-neutral-200 rounded-xl p-4">
           <div className="text-sm text-neutral-600">Órdenes Pendientes</div>
           <div className="text-3xl font-bold text-[var(--color-warning)] mt-1">
-            {orders.length}
+            {pendingOrders.length}
+          </div>
+        </div>
+        <div className="bg-white border border-neutral-200 rounded-xl p-4">
+          <div className="text-sm text-neutral-600">Órdenes Asignadas</div>
+          <div className="text-3xl font-bold text-[var(--color-info)] mt-1">
+            {assignedOrders.length}
           </div>
         </div>
         <div className="bg-white border border-neutral-200 rounded-xl p-4">
@@ -164,7 +179,7 @@ export default function AssignOrdersPage() {
           <div className="text-sm text-neutral-600">Ratio</div>
           <div className="text-3xl font-bold text-[var(--color-info)] mt-1">
             {riders.length > 0
-              ? (orders.length / riders.length).toFixed(1)
+              ? (pendingOrders.length / riders.length).toFixed(1)
               : "—"}
           </div>
         </div>
@@ -176,7 +191,7 @@ export default function AssignOrdersPage() {
           <h3 className="font-semibold">Órdenes Pendientes de Asignación</h3>
         </div>
 
-        {orders.length === 0 ? (
+        {pendingOrders.length === 0 ? (
           <div className="px-6 py-12 text-center text-neutral-500">
             <div className="text-6xl mb-4">✅</div>
             <p className="text-lg font-medium">No hay órdenes pendientes</p>
@@ -199,7 +214,7 @@ export default function AssignOrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {orders.map((order) => (
+                {pendingOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-neutral-50">
                     <td className="px-4 py-3 font-mono text-xs text-neutral-700">
                       #{order.id}
@@ -228,6 +243,91 @@ export default function AssignOrdersPage() {
                           loading={assigning === order.id}
                         />
                       </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Assigned Orders Table */}
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-neutral-200">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Órdenes Asignadas</h3>
+            <span className="text-sm text-neutral-600">
+              {assignedOrders.length} orden{assignedOrders.length !== 1 ? "es" : ""}
+            </span>
+          </div>
+        </div>
+
+        {assignedOrders.length === 0 ? (
+          <div className="px-6 py-12 text-center text-neutral-500">
+            <div className="text-6xl mb-4">📋</div>
+            <p className="text-lg font-medium">No hay órdenes asignadas</p>
+            <p className="text-sm mt-1">
+              Asigna couriers a las órdenes pendientes
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-neutral-50 text-neutral-600 font-heading">
+                <tr className="[&>th]:px-4 [&>th]:py-3 [&>th]:text-left [&>th]:font-medium">
+                  <th className="w-[100px]">ID</th>
+                  <th>Cliente</th>
+                  <th className="min-w-[180px]">Recogida</th>
+                  <th className="min-w-[180px]">Entrega</th>
+                  <th className="min-w-[180px]">Courier Asignado</th>
+                  <th className="w-[100px]">Distancia</th>
+                  <th className="w-[100px]">Precio</th>
+                  <th className="w-[120px]">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {assignedOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-neutral-50">
+                    <td className="px-4 py-3 font-mono text-xs text-neutral-700">
+                      #{order.id}
+                    </td>
+                    <td className="px-4 py-3">
+                      {order.customer.name} {order.customer.lastname}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-700 text-xs">
+                      {order.pickupAddress}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-700 text-xs">
+                      {order.deliveryAddress}
+                    </td>
+                    <td className="px-4 py-3">
+                      {order.rider && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-[var(--color-brand-500)] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                            {order.rider.user.name.charAt(0)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-medium text-sm truncate">
+                              {order.rider.user.name}
+                            </div>
+                            <div className="text-xs text-neutral-600 truncate">
+                              {order.rider.phone}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 font-semibold">
+                      {Number(order.distanceKm).toFixed(2)} km
+                    </td>
+                    <td className="px-4 py-3 font-semibold">
+                      €{Number(order.estimatedPrice).toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold bg-[var(--color-info)]/15 text-[var(--color-info)]">
+                        Asignada
+                      </span>
                     </td>
                   </tr>
                 ))}
