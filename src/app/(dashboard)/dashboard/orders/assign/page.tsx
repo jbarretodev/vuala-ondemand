@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import CourierCombobox from "@/components/CourierCombobox";
 
 type Order = {
   id: number;
@@ -194,7 +195,7 @@ export default function AssignOrdersPage() {
                   <th className="min-w-[200px]">Entrega</th>
                   <th className="w-[100px]">Distancia</th>
                   <th className="w-[100px]">Precio</th>
-                  <th className="min-w-[250px]">Asignar Courier</th>
+                  <th className="w-[400px]">Asignar Courier</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
@@ -219,12 +220,14 @@ export default function AssignOrdersPage() {
                       €{Number(order.estimatedPrice).toFixed(2)}
                     </td>
                     <td className="px-4 py-3">
-                      <RiderSelector
-                        riders={riders}
-                        onAssign={(riderId) => handleAssign(order.id, riderId)}
-                        disabled={assigning === order.id}
-                        loading={assigning === order.id}
-                      />
+                      <div className="max-w-[400px]">
+                        <RiderSelector
+                          riders={riders}
+                          onAssign={(riderId) => handleAssign(order.id, riderId)}
+                          disabled={assigning === order.id}
+                          loading={assigning === order.id}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -271,32 +274,26 @@ function RiderSelector({
   disabled?: boolean;
   loading?: boolean;
 }) {
-  const [selectedRider, setSelectedRider] = useState<string>("");
+  const [selectedRider, setSelectedRider] = useState<number | null>(null);
 
   const handleAssign = () => {
     if (selectedRider) {
-      onAssign(parseInt(selectedRider));
-      setSelectedRider("");
+      onAssign(selectedRider);
+      setSelectedRider(null);
     }
   };
 
   return (
     <div className="flex items-center gap-2">
-      <select
-        value={selectedRider}
-        onChange={(e) => setSelectedRider(e.target.value)}
-        disabled={disabled || riders.length === 0}
-        className="flex-1 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none ring-[var(--color-brand-500)]/20 focus:ring-4 disabled:bg-neutral-100 disabled:cursor-not-allowed"
-      >
-        <option value="">Seleccionar courier...</option>
-        {riders.map((rider) => (
-          <option key={rider.id} value={rider.id}>
-            {rider.user.name} -{" "}
-            {rider.vehicle?.type || "Sin vehículo"} -{" "}
-            {rider.completedOrders} entregas
-          </option>
-        ))}
-      </select>
+      <div className="flex-1">
+        <CourierCombobox
+          riders={riders}
+          selectedRiderId={selectedRider}
+          onSelect={setSelectedRider}
+          disabled={disabled || riders.length === 0}
+          placeholder="Seleccionar courier..."
+        />
+      </div>
       <button
         onClick={handleAssign}
         disabled={!selectedRider || disabled || loading}
