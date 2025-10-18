@@ -11,11 +11,15 @@ type Order = {
   distance:number;
   total: number;         
   status: "pending" | "onroute" | "delivered" | "canceled";
+  rider?: {
+    id: number;
+    name: string;
+  };
 };
 
 const MOCK: Order[] = [
-  { id: "ORD-23121", date: "2025-08-23 12:40", customer: "Pablo Sáenz", pickup: "C/ Padilla 200, BCN", dropoff: "C/ Lepant 150, BCN",distance:1.80, total: 12.9, status: "delivered" },
-  { id: "ORD-23122", date: "2025-08-23 12:55", customer: "María López", pickup: "Pizzería Italia, BCN", dropoff: "C/ Marina 35, BCN",distance:2.80, total: 9.5, status: "onroute" },
+  { id: "ORD-23121", date: "2025-08-23 12:40", customer: "Pablo Sáenz", pickup: "C/ Padilla 200, BCN", dropoff: "C/ Lepant 150, BCN",distance:1.80, total: 12.9, status: "delivered", rider: { id: 1, name: "Juan Pérez" } },
+  { id: "ORD-23122", date: "2025-08-23 12:55", customer: "María López", pickup: "Pizzería Italia, BCN", dropoff: "C/ Marina 35, BCN",distance:2.80, total: 9.5, status: "onroute", rider: { id: 2, name: "Carlos Gómez" } },
   { id: "ORD-23123", date: "2025-08-23 13:05", customer: "Javier Pérez", pickup: "C/ Girona 12, BCN", dropoff: "Av. Diagonal 480, BCN",distance:1.80, total: 15.2, status: "pending" },
   { id: "ORD-23124", date: "2025-08-23 13:10", customer: "Lucía Fernández", pickup: "C/ Provença 310, BCN", dropoff: "C/ Roselló 90, BCN",distance:1.80, total: 0, status: "canceled" },
 ];
@@ -46,6 +50,12 @@ export default function OrdersPage() {
             className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none ring-[var(--color-brand-500)]/20 focus:ring-4 sm:w-80"
           />
           <Link
+            href="/dashboard/orders/assign"
+            className="whitespace-nowrap rounded-lg bg-[var(--color-info)] px-3 py-2 text-sm font-semibold text-white hover:opacity-90"
+          >
+            Asignar Couriers
+          </Link>
+          <Link
             href="/dashboard/orders/new"
             className="whitespace-nowrap rounded-lg bg-[var(--color-brand-500)] px-3 py-2 text-sm font-semibold text-white hover:opacity-90"
           >
@@ -63,6 +73,7 @@ export default function OrdersPage() {
                 <th>Cliente</th>
                 <th className="min-w-[220px]">Recogida</th>
                 <th className="min-w-[220px]">Entrega</th>
+                <th className="w-[150px]">Courier</th>
                 <th className="w-[110px]">Estado</th>
                 <th className="w-[110px]">Distancia</th>
                 <th className="w-[110px] text-right">Importe</th>
@@ -78,6 +89,13 @@ export default function OrdersPage() {
                   <td className="px-3 py-2 text-neutral-700">{o.pickup}</td>
                   <td className="px-3 py-2 text-neutral-700">{o.dropoff}</td>
                   <td className="px-3 py-2">
+                    {o.rider ? (
+                      <span className="text-sm text-neutral-700">{o.rider.name}</span>
+                    ) : (
+                      <span className="text-xs text-neutral-400 italic">Sin asignar</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
                     <StatusPill status={o.status} />
                   </td>
                   <td className="px-3 py-2 font-semibold">
@@ -88,7 +106,7 @@ export default function OrdersPage() {
                   </td>
 
                   <td className="px-3 py-2 text-right">
-                    <RowActions id={o.id} />
+                    <RowActions id={o.id} status={o.status} hasRider={!!o.rider} />
                   </td>
                 </tr>
               ))}
@@ -107,7 +125,6 @@ export default function OrdersPage() {
   );
 }
 
-
 function StatusPill({ status }: { status: Order["status"] }) {
   const map: Record<Order["status"], { bg: string; text: string; label: string }> = {
     pending:   { bg: "bg-[var(--color-warning)]/15",   text: "text-[var(--color-warning)]",   label: "Pendiente" },
@@ -123,7 +140,7 @@ function StatusPill({ status }: { status: Order["status"] }) {
   );
 }
 
-function RowActions({ id }: { id: string }) {
+function RowActions({ id, status, hasRider }: { id: string; status: string; hasRider: boolean }) {
   return (
     <div className="inline-flex items-center gap-2">
       <Link
@@ -132,6 +149,14 @@ function RowActions({ id }: { id: string }) {
       >
         Ver
       </Link>
+      {status === "pending" && !hasRider && (
+        <Link
+          href="/dashboard/orders/assign"
+          className="rounded-md border border-[var(--color-info)] bg-[var(--color-info)]/10 text-[var(--color-info)] px-2 py-1 text-xs hover:bg-[var(--color-info)]/20"
+        >
+          Asignar Courier
+        </Link>
+      )}
       <button
         className="rounded-md border border-neutral-200 px-2 py-1 text-xs hover:bg-neutral-50"
         onClick={() => alert(`Reintentar entrega de ${id} (mock)`)}

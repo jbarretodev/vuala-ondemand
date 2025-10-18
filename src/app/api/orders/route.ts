@@ -145,40 +145,69 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Obtener el usuario de la base de datos con sus clientes
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: {
-        customers: true,
-      },
-    });
+    // Obtener parámetros de query
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status");
+    const all = searchParams.get("all") === "true"; // Para admin, obtener todas las órdenes
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "Usuario no encontrado" },
-        { status: 404 }
-      );
+    // Construir filtros
+    const where: any = {};
+    
+    if (!all) {
+      // Obtener el usuario de la base de datos con sus clientes
+      const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        include: {
+          customers: true,
+        },
+      });
+
+      if (!user) {
+        return NextResponse.json(
+          { error: "Usuario no encontrado" },
+          { status: 404 }
+        );
+      }
+
+      if (!user.customers || user.customers.length === 0) {
+        return NextResponse.json({ orders: [] }, { status: 200 });
+      }
+
+      const customerIds = user.customers.map(c => c.id);
+      where.customerId = { in: customerIds };
     }
 
-    if (!user.customers || user.customers.length === 0) {
-      return NextResponse.json({ orders: [] }, { status: 200 });
+    // Filtrar por status si se especifica
+    if (status) {
+      where.status = status;
     }
 
-    const customerIds = user.customers.map(c => c.id);
-
-    // Obtener las órdenes de los clientes del usuario
+    // Obtener las órdenes
     const orders = await prisma.order.findMany({
-      where: { 
-        customerId: {
-          in: customerIds
-        }
-      },
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         customer: {
           select: {
+            id: true,
             name: true,
             lastname: true,
+          },
+        },
+        rider: {
+          select: {
+            id: true,
+            phone: true,
+            status: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
+            vehicle: true,
           },
         },
       },

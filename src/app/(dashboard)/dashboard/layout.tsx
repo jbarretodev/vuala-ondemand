@@ -11,6 +11,7 @@ const NAV = [
   { label:" Mapa ", href: "/dashboard/map"},
   { label:"Clientes" , href: "/dashboard/clientes" },
   { label:"Pedidos" , href: "/dashboard/orders" },
+  { label:"Asignar Órdenes" , href: "/dashboard/orders/assign" },
   { label:"Couriers" , href: "/dashboard/riders" },
   { label:"Facturación" , href: "/dashboard/" },
   { label:"Ajustes" , href: "/dashboard/settings" },
