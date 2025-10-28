@@ -161,20 +161,8 @@ async function main() {
 
   console.log('📦 Orders:', [order1.id, order2.id, order3.id]);
 
-  // ---- COURIERS (ahora SÍ dentro de main) ----
-  const names = ['nico', 'ana', 'luis', 'sofia', 'rafa', 'irene'];
-  await Promise.all(
-    names.map((id) =>
-      prisma.courier.upsert({
-        where: { id },
-        update: {},
-        create: { id, name: id.toUpperCase(), status: 'OFFLINE' },
-      })
-    )
-  );
-
-  console.log('🏍️ Couriers seeded:', names);
   console.log('✅ Seed completed successfully!');
+  console.log('💡 Tip: Run "pnpm run db:seed:riders" to add courier/rider data');
 }
 
 main()
