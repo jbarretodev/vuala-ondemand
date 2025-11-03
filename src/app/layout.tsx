@@ -3,29 +3,9 @@ import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import AuthSessionProvider from "@/components/providers/SessionProvider";
 import ToasterProvider from "@/components/providers/ToasterProvider";
-/*
-import { Geist, Geist_Mono } from "next/font/google";
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});*/
+import { inter , jakarta } from "./font";
 
 
-const inter = Inter ({
-  variable: "--font-inter",
-  subsets : ["latin"],
-});
-
-const poppins = Poppins({
-  variable: "--font-poppins",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: "Vualá | plataforma de entregas de  última milla ",
@@ -38,9 +18,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${jakarta.variable}`}>
       <body
-        className={`${inter.variable} ${poppins.variable} antialiased`}
+        className="font-jakarta"
       >
         <AuthSessionProvider>
           <ToasterProvider />
