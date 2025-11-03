@@ -710,7 +710,7 @@ function NewOrderMapboxPageClient() {
               🟢
             </div>
             <div>
-              <p className="text-sm text-neutral-600">Available Couriers</p>
+              <p className="text-xl text-neutral-600">Available Couriers</p>
               <p className="text-2xl font-bold text-green-600">{availableCouriers}</p>
             </div>
           </div>
@@ -722,7 +722,7 @@ function NewOrderMapboxPageClient() {
               🟠
             </div>
             <div>
-              <p className="text-sm text-neutral-600">On Delivery</p>
+              <p className="text-xl text-neutral-600">On Delivery</p>
               <p className="text-2xl font-bold text-orange-600">{onDeliveryCouriers}</p>
             </div>
           </div>
@@ -734,7 +734,7 @@ function NewOrderMapboxPageClient() {
               🚚
             </div>
             <div>
-              <p className="text-sm text-neutral-600">Total Active</p>
+              <p className="text-xl text-neutral-600">Total Active</p>
               <p className="text-2xl font-bold text-blue-600">{couriers.length}</p>
             </div>
           </div>
