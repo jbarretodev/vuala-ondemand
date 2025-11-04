@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import OnRouteOrderCard from "@/components/Dashboard/OnRouteOrderCard";
 
 export default function DashboardHome() {
   const { data: session, status } = useSession();
@@ -50,7 +51,7 @@ export default function DashboardHome() {
         <p className="mt-1 font-heading text-2xl font-semibold">54</p>
       </div>
     </section>
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-3">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-10">
           <h2 className="font-heading text-2xl font-semibold">Pedidos en Curso</h2>
 
           <div className="flex w-full items-center gap-2 sm:w-auto">
@@ -65,7 +66,10 @@ export default function DashboardHome() {
               + Nuevo pedido
             </Link>
           </div>
-      </div>
+    </div>
+    <div>
+          <OnRouteOrderCard/>
+          </div>
     </>
   );
 }

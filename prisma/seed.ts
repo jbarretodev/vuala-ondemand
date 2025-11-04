@@ -161,8 +161,53 @@ async function main() {
 
   console.log('📦 Orders:', [order1.id, order2.id, order3.id]);
 
-  console.log('✅ Seed completed successfully!');
-  console.log('💡 Tip: Run "pnpm run db:seed:riders" to add courier/rider data');
+// ---- RIDERS ----
+// Primero crear usuarios para los riders
+const riderUsers = [
+  { username: 'nico', name: 'Nico', email: 'nico@vuala.com' },
+  { username: 'ana', name: 'Ana', email: 'ana@vuala.com' },
+  { username: 'luis', name: 'Luis', email: 'luis@vuala.com' },
+  { username: 'sofia', name: 'Sofia', email: 'sofia@vuala.com' },
+  { username: 'rafa', name: 'Rafa', email: 'rafa@vuala.com' },
+  { username: 'irene', name: 'Irene', email: 'irene@vuala.com' },
+];
+
+// Crear usuarios para los riders
+const createdRiderUsers = await Promise.all(
+  riderUsers.map((riderData) =>
+    prisma.user.upsert({
+      where: { email: riderData.email },
+      update: {},
+      create: {
+        username: riderData.username,
+        name: riderData.name,
+        email: riderData.email,
+        password: hashedPassword,
+        roleId: riderRole.id,
+      },
+    })
+  )
+);
+
+console.log('👥 Rider users created:', createdRiderUsers.map(u => u.email));
+
+// Ahora crear los riders asociados a esos usuarios
+await Promise.all(
+  createdRiderUsers.map((user, index) =>
+    prisma.rider.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: {
+        userId: user.id,
+        phone: `+3460000${index + 1}000`,
+        status: 'OFFLINE',
+        // licenseNumber, rating y otros campos opcionales se pueden omitir
+      },
+    })
+  )
+);
+
+console.log('🏍️ Riders seeded successfully!');
 }
 
 main()
