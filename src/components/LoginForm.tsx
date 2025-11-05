@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signIn, getSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginForm() {
@@ -42,7 +42,7 @@ export default function LoginForm() {
         // Redirect to dashboard after successful login
         router.push("/dashboard");
       }
-    } catch (error) {
+    } catch (_error) {
       setError("Ocurrió un error. Por favor, intenta nuevamente.");
     } finally {
       setLoading(false);
@@ -53,7 +53,7 @@ export default function LoginForm() {
     setLoading(true);
     try {
       await signIn("google", { callbackUrl: "/dashboard" });
-    } catch (error) {
+    } catch (_error) {
       setError("Error al iniciar sesión con Google.");
       setLoading(false);
     }

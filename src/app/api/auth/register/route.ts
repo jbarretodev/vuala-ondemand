@@ -26,7 +26,7 @@ function splitFullName(fullName: string): { firstName: string; lastName: string 
 // Helper function to generate unique username
 async function generateUsername(email: string, name: string): Promise<string> {
   // Try email prefix first
-  let baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+  const baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
   
   // Check if exists
   let username = baseUsername;
@@ -151,10 +151,11 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Registration error:", error)
+    const errorMessage = error instanceof Error ? error.message : "Error interno del servidor.";
     return NextResponse.json(
-      { message: error.message || "Error interno del servidor." },
+      { message: errorMessage },
       { status: 500 }
     )
   }

@@ -1,6 +1,6 @@
 import { prisma } from './prisma'
 import type { User, Order, DeliveryPartner } from '../types/prisma'
-const bcrypt = require('bcryptjs')
+import bcrypt from 'bcryptjs'
 
 // User Service
 export class UserService {
@@ -157,7 +157,7 @@ export class OrderService {
     const { status, customerId, page = 1, limit = 10 } = filters || {};
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: { status?: string; customerId?: number } = {};
     if (status) where.status = status;
     if (customerId) where.customerId = customerId;
 

@@ -1,7 +1,8 @@
 //importar component
 
+import Link from "next/link";
 import LoginForm from "@/components/LoginForm";
-
+import { Suspense } from "react";
 
 export default function LoginPage() {
   return (
@@ -13,7 +14,9 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <LoginForm />
+      <Suspense fallback={<div>Cargando...</div>}>
+        <LoginForm />
+      </Suspense>
 
       <div className="mt-6 text-center text-sm">
         ¿No tienes cuenta?{" "}

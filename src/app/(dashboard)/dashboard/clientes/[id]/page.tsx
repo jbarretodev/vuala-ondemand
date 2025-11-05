@@ -52,6 +52,7 @@ export default function ClienteDetailPage() {
       fetchCustomer();
       fetchStats();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
   const fetchCustomer = async () => {

@@ -39,7 +39,7 @@ type PaginationData = {
 };
 
 export default function ClientesPage() {
-  const { data: session } = useSession();
+  const { data: _session } = useSession();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [pagination, setPagination] = useState<PaginationData>({
     page: 1,
@@ -88,6 +88,7 @@ export default function ClientesPage() {
 
   useEffect(() => {
     fetchCustomers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = (value: string) => {
@@ -151,7 +152,7 @@ export default function ClientesPage() {
     });
   };
 
-  const getStatusBadgeColor = (status: string) => {
+  const _getStatusBadgeColor = (status: string): string => {
     const colors: Record<string, string> = {
       pending: "bg-yellow-100 text-yellow-800",
       in_transit: "bg-blue-100 text-blue-800",

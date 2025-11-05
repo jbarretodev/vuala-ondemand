@@ -22,10 +22,10 @@ type LatLng = { lat: number; lng: number };
 type Suggestion = { id: string; place_name: string; center: [number, number] };
 
 // Tipos GeoJSON básicos
-interface Feature<T = any> {
+interface Feature<T = Polygon | MultiPolygon | LineString> {
   type: "Feature";
   geometry: T;
-  properties: any;
+  properties: Record<string, unknown>;
 }
 
 interface Polygon {
@@ -52,9 +52,9 @@ const secondsToMinText = (s: number) =>
   `${Math.max(1, Math.round(s / 60))} min`;
 
 /* ---------- GeoJSON normalizer (robusto) ---------- */
-function hasValidCoordinates(f: any): f is ZoneFeature {
-  if (!f?.geometry) return false;
-  const g = f.geometry;
+function hasValidCoordinates(f: unknown): f is ZoneFeature {
+  if (!f || typeof f !== 'object' || !('geometry' in f)) return false;
+  const g = (f as { geometry: unknown }).geometry as Polygon | MultiPolygon;
   if (g.type === "Polygon") {
     return (
       Array.isArray(g.coordinates) &&
@@ -76,27 +76,30 @@ function hasValidCoordinates(f: any): f is ZoneFeature {
 }
 
 /** Devuelve Feature<Polygon|MultiPolygon> válido o null */
-function normalizeZoneGeoJSON(gj: any): ZoneFeature | null {
+function normalizeZoneGeoJSON(gj: unknown): ZoneFeature | null {
   try {
-    if (!gj) return null;
-
-    if (gj.type === "FeatureCollection" && Array.isArray(gj.features)) {
-      const f = gj.features.find(
-        (ft: any) =>
-          ft?.geometry?.type === "Polygon" ||
-          ft?.geometry?.type === "MultiPolygon"
+    if (!gj || typeof gj !== 'object') return null;
+    const gjObj = gj as Record<string, unknown>;
+    if (gjObj.type === "FeatureCollection" && Array.isArray(gjObj.features)) {
+      const f = gjObj.features.find(
+        (ft: unknown) => {
+          if (!ft || typeof ft !== 'object') return false;
+          const ftObj = ft as Record<string, unknown>;
+          const geom = ftObj.geometry as Record<string, unknown> | undefined;
+          return geom?.type === "Polygon" || geom?.type === "MultiPolygon";
+        }
       );
       if (f && hasValidCoordinates(f)) return f as ZoneFeature;
       return null;
     }
 
-    if (gj.type === "Feature") {
+    if (gjObj.type === "Feature") {
       if (hasValidCoordinates(gj)) return gj as ZoneFeature;
       return null;
     }
 
-    if (gj.type === "Polygon" || gj.type === "MultiPolygon") {
-      const f: ZoneFeature = { type: "Feature", geometry: gj, properties: {} };
+    if (gjObj.type === "Polygon" || gjObj.type === "MultiPolygon") {
+      const f: ZoneFeature = { type: "Feature", geometry: gjObj as unknown as Polygon | MultiPolygon, properties: {} };
       return hasValidCoordinates(f) ? f : null;
     }
 
@@ -150,7 +153,7 @@ function AddressInput({
         url.searchParams.set("limit", "5");
         const res = await fetch(url.toString());
         const data = await res.json();
-        const feats = (data?.features || []) as any[];
+        const feats = (data?.features || []) as Array<{ id: string; place_name: string; center: [number, number] }>;
         const suggs: Suggestion[] = feats.map((f) => ({
           id: f.id,
           place_name: f.place_name,
@@ -285,7 +288,17 @@ function NewOrderMapboxPageClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Couriers state
-  const [couriers, setCouriers] = useState<any[]>([]);
+  const [couriers, setCouriers] = useState<Array<{ 
+    id: number; 
+    user: { name: string }; 
+    status: string; 
+    latitude: number | null; 
+    longitude: number | null;
+    lastLocation?: { timestamp: Date; lat: number; lng: number; battery?: number };
+    vehicle?: { type: string; brand?: string; model?: string; licensePlate?: string };
+    rating?: number;
+    completedOrders?: number;
+  }>>([]);
   const courierMarkersRef = useRef<mapboxgl.Marker[]>([]);
 
   // bandera de mapa listo (fix appendChild)
@@ -485,7 +498,7 @@ function NewOrderMapboxPageClient() {
         BICYCLE: '🚲',
         SCOOTER: '🛵',
       };
-      el.textContent = vehicleIcons[courier.vehicle?.type] || '🚚';
+      el.textContent = vehicleIcons[courier.vehicle?.type || ''] || '🚚';
 
       // Crear popup con información del courier
       const popupContent = `
@@ -564,7 +577,7 @@ function NewOrderMapboxPageClient() {
         setDurationText(secondsToMinText(r.duration));
 
         const src = map.getSource("route") as GeoJSONSource | undefined;
-        if (src) src.setData(line as any);
+        if (src) src.setData(line as GeoJSON.Feature);
       } catch (e) {
         console.error(e);
         setHasRoute(false);
@@ -584,7 +597,7 @@ function NewOrderMapboxPageClient() {
     try {
       return booleanPointInPolygon(
         point([pickup.lng, pickup.lat]),
-        zone as any
+        zone as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>
       );
     } catch (e) {
       console.warn("[zone] booleanPointInPolygon error (pickup):", e);
@@ -599,7 +612,7 @@ function NewOrderMapboxPageClient() {
     try {
       return booleanPointInPolygon(
         point([dropoff.lng, dropoff.lat]),
-        zone as any
+        zone as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>
       );
     } catch (e) {
       console.warn("[zone] booleanPointInPolygon error (dropoff):", e);
@@ -779,7 +792,7 @@ function NewOrderMapboxPageClient() {
 function ensureZoneSourceAndLayers(map: MapboxMap, feat: ZoneFeature) {
   const src = map.getSource("zone") as GeoJSONSource | undefined;
   if (!src) {
-    map.addSource("zone", { type: "geojson", data: feat as any });
+    map.addSource("zone", { type: "geojson", data: feat as GeoJSON.Feature });
     map.addLayer({
       id: "zone-fill",
       type: "fill",
@@ -793,13 +806,13 @@ function ensureZoneSourceAndLayers(map: MapboxMap, feat: ZoneFeature) {
       paint: { "line-color": "#3D5AFE", "line-width": 2, "line-opacity": 0.9 },
     });
   } else {
-    src.setData(feat as any);
+    src.setData(feat as GeoJSON.Feature);
   }
 }
 
 function fitToFeature(map: MapboxMap, feat: ZoneFeature) {
   try {
-    const [minX, minY, maxX, maxY] = bbox(feat as any);
+    const [minX, minY, maxX, maxY] = bbox(feat as GeoJSON.Feature);
     if (
       [minX, minY, maxX, maxY].every((n) => Number.isFinite(n)) &&
       maxX !== minX &&

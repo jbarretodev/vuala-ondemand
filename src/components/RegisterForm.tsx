@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
 import Link from "next/link";
 
 export default function RegisterForm() {
@@ -70,7 +69,7 @@ export default function RegisterForm() {
 
       // Redirect to login page after successful registration
       router.push("/login?message=Cuenta creada exitosamente. Inicia sesión con tus credenciales.");
-    } catch (error) {
+    } catch (_error) {
       setError("Error de conexión. Por favor, intenta nuevamente.");
     } finally {
       setLoading(false);

@@ -62,6 +62,7 @@ export default function CourierDetailPage() {
     } else if (status === "authenticated") {
       fetchCourier();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, courierId]);
 
   const fetchCourier = async () => {

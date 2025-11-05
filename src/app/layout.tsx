@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import AuthSessionProvider from "@/components/providers/SessionProvider";
 import ToasterProvider from "@/components/providers/ToasterProvider";

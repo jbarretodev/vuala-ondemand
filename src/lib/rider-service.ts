@@ -104,7 +104,7 @@ export class RiderService {
     const { status, isActive, page = 1, limit = 10 } = filters || {};
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: { status?: RiderStatus; isActive?: boolean } = {};
     if (status) where.status = status;
     if (isActive !== undefined) where.isActive = isActive;
 
@@ -273,7 +273,7 @@ export class RiderService {
   ) {
     const { from, to, limit = 100 } = filters || {};
 
-    const where: any = { riderId };
+    const where: { riderId: number; timestamp?: { gte?: Date; lte?: Date } } = { riderId };
     if (from || to) {
       where.timestamp = {};
       if (from) where.timestamp.gte = from;

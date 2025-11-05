@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { RiderService } from "@/lib/rider-service";
 
 type RouteContext = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 /**
@@ -25,7 +25,8 @@ export async function GET(
       );
     }
 
-    const id = parseInt(context.params.id);
+    const { id: paramId } = await context.params;
+    const id = parseInt(paramId);
     const rider = await RiderService.getRiderById(id);
 
     if (!rider) {
@@ -63,7 +64,8 @@ export async function PATCH(
       );
     }
 
-    const id = parseInt(context.params.id);
+    const { id: paramId } = await context.params;
+    const id = parseInt(paramId);
     const body = await request.json();
 
     // Update based on what's in the body
@@ -103,10 +105,11 @@ export async function PATCH(
       { error: "No hay campos para actualizar" },
       { status: 400 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating rider:", error);
+    const errorMessage = error instanceof Error ? error.message : "Error al actualizar repartidor";
     return NextResponse.json(
-      { error: error.message || "Error al actualizar repartidor" },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -130,16 +133,18 @@ export async function DELETE(
       );
     }
 
-    const id = parseInt(context.params.id);
+    const { id: paramId } = await context.params;
+    const id = parseInt(paramId);
     await RiderService.deleteRider(id);
 
     return NextResponse.json({
       message: "Repartidor eliminado exitosamente",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting rider:", error);
+    const errorMessage = error instanceof Error ? error.message : "Error al eliminar repartidor";
     return NextResponse.json(
-      { error: error.message || "Error al eliminar repartidor" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

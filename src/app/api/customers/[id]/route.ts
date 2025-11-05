@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CustomerService } from "@/lib/customer-service";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 /**
  * GET /api/customers/[id]
@@ -9,7 +9,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +21,8 @@ export async function GET(
       );
     }
 
-    const customerId = parseInt(params.id);
+    const { id } = await params;
+    const customerId = parseInt(id);
 
     if (isNaN(customerId)) {
       return NextResponse.json(
@@ -55,7 +56,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -67,7 +68,8 @@ export async function PUT(
       );
     }
 
-    const customerId = parseInt(params.id);
+    const { id } = await params;
+    const customerId = parseInt(id);
 
     if (isNaN(customerId)) {
       return NextResponse.json(
@@ -90,18 +92,18 @@ export async function PUT(
       message: "Cliente actualizado exitosamente",
       customer,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating customer:", error);
-
-    if (error.message.includes("no encontrado")) {
+    const errorMessage = error instanceof Error ? error.message : "Error al actualizar cliente";
+    if (errorMessage.includes("no encontrado")) {
       return NextResponse.json(
-        { error: error.message },
+        { error: errorMessage },
         { status: 404 }
       );
     }
 
     return NextResponse.json(
-      { error: "Error al actualizar cliente" },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -113,7 +115,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -125,7 +127,8 @@ export async function DELETE(
       );
     }
 
-    const customerId = parseInt(params.id);
+    const { id } = await params;
+    const customerId = parseInt(id);
 
     if (isNaN(customerId)) {
       return NextResponse.json(
@@ -174,18 +177,18 @@ export async function DELETE(
     return NextResponse.json({
       message: "Cliente y usuario eliminados exitosamente",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting customer:", error);
-
-    if (error.message.includes("no encontrado")) {
+    const errorMessage = error instanceof Error ? error.message : "Error al eliminar cliente";
+    if (errorMessage.includes("no encontrado")) {
       return NextResponse.json(
-        { error: error.message },
+        { error: errorMessage },
         { status: 404 }
       );
     }
 
     return NextResponse.json(
-      { error: "Error al eliminar cliente" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

@@ -9,7 +9,7 @@ export default function NewCourierPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<Array<{ id: number; name: string; username: string; email: string }>>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
 
   // Form state
@@ -74,7 +74,19 @@ export default function NewCourierPage() {
     try {
       setLoading(true);
 
-      const payload: any = {
+      const payload: {
+        userId: number;
+        phone: string;
+        licenseNumber?: string;
+        vehicle: {
+          type: string;
+          brand?: string;
+          model?: string;
+          year?: number;
+          licensePlate: string;
+          color?: string;
+        };
+      } = {
         userId: parseInt(formData.userId),
         phone: formData.phone,
         licenseNumber: formData.licenseNumber || undefined,

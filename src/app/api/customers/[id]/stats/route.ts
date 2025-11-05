@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CustomerService } from "@/lib/customer-service";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 /**
  * GET /api/customers/[id]/stats
@@ -9,7 +9,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +21,8 @@ export async function GET(
       );
     }
 
-    const customerId = parseInt(params.id);
+    const { id } = await params;
+    const customerId = parseInt(id);
 
     if (isNaN(customerId)) {
       return NextResponse.json(
@@ -33,18 +34,18 @@ export async function GET(
     const stats = await CustomerService.getStats(customerId);
 
     return NextResponse.json({ stats });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching customer stats:", error);
-
-    if (error.message.includes("no encontrado")) {
+    const errorMessage = error instanceof Error ? error.message : "Error al obtener estadísticas del cliente";
+    if (errorMessage.includes("no encontrado")) {
       return NextResponse.json(
-        { error: error.message },
+        { error: errorMessage },
         { status: 404 }
       );
     }
 
     return NextResponse.json(
-      { error: "Error al obtener estadísticas" },
+      { error: "Error al obtener estadísticas del cliente" },
       { status: 500 }
     );
   }

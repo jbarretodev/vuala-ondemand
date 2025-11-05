@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { RiderService } from "@/lib/rider-service";
 import { RiderStatus, VehicleType } from "@prisma/client";
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") as RiderStatus | null;
     const isActive = searchParams.get("isActive");
 
-    const filters: any = { page, limit };
+    const filters: { page: number; limit: number; status?: RiderStatus; isActive?: boolean } = { page, limit };
     if (status) filters.status = status;
     if (isActive !== null) filters.isActive = isActive === "true";
 
@@ -75,7 +75,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const riderData: any = {
+    const riderData: {
+      userId: number;
+      phone: string;
+      licenseNumber?: string;
+      vehicleData?: { type: VehicleType; brand?: string; model?: string; year?: number; licensePlate: string; color?: string };
+    } = {
       userId: parseInt(userId),
       phone,
       licenseNumber,
@@ -101,11 +106,11 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating rider:", error);
-    
+    const errorMessage = error instanceof Error ? error.message : "Error al crear repartidor";
     return NextResponse.json(
-      { error: error.message || "Error al crear repartidor" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

@@ -26,7 +26,7 @@ export default function NuevoClientePage() {
     roleId: "2", // Default to customer role
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -51,7 +51,7 @@ export default function NuevoClientePage() {
 
     try {
       // Remove confirmPassword before sending
-      const { confirmPassword, ...dataToSend } = formData;
+      const { confirmPassword: _confirmPassword, ...dataToSend } = formData;
 
       const response = await fetch("/api/customers", {
         method: "POST",
@@ -264,7 +264,7 @@ export default function NuevoClientePage() {
                   id="roleId"
                   name="roleId"
                   value={formData.roleId}
-                  onChange={(e) => handleChange(e as any)}
+                  onChange={handleChange}
                   required
                   className="w-full rounded-xl border border-neutral-300 px-4 py-2 text-sm outline-none ring-[var(--color-brand-500)]/20 focus:ring-4"
                 >

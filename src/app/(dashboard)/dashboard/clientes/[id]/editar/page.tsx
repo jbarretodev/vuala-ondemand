@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
-type Customer = {
+type _Customer = {
   id: number;
   name: string;
   lastname: string;
@@ -32,6 +32,7 @@ export default function EditarClientePage() {
     if (params.id) {
       fetchCustomer();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
   const fetchCustomer = async () => {

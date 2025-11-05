@@ -44,7 +44,7 @@ interface Courier {
 }
 
 export default function CouriersPage() {
-  const { data: session, status } = useSession();
+  const { data: _session, status } = useSession();
   const router = useRouter();
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +60,7 @@ export default function CouriersPage() {
 
   useEffect(() => {
     fetchCouriers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, filter]);
 
   const fetchCouriers = async () => {

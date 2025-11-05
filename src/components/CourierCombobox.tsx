@@ -214,7 +214,7 @@ export default function CourierCombobox({
                 {search ? (
                   <>
                     <div className="text-2xl mb-2">🔍</div>
-                    No se encontraron couriers con "{search}"
+                    No se encontraron couriers con &quot;{search}&quot;
                   </>
                 ) : (
                   <>

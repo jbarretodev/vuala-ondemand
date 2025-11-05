@@ -1,8 +1,8 @@
 // nav.ts
-import type { SVGProps } from "react";
+import React from "react";
 import { LayoutDashboard, Truck, Package, Settings } from "./icons"; // o comenta si no usas Lucide
 
-type IconComp = (props: SVGProps<SVGSVGElement>) => JSX.Element;
+type IconComp = React.ComponentType<React.SVGProps<SVGSVGElement>>;
 
 export type NavItem = {
   href: string;

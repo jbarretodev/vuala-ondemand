@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
     const all = searchParams.get("all") === "true"; // Para admin, obtener todas las órdenes
 
     // Construir filtros
-    const where: any = {};
+    const where: { customerId?: number | { in: number[] }; status?: string } = {};
     
     if (!all) {
       // Obtener el usuario de la base de datos con sus clientes

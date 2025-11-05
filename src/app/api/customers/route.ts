@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CustomerService } from "@/lib/customer-service";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 /**
  * GET /api/customers
@@ -190,11 +190,11 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating customer:", error);
-    
+    const errorMessage = error instanceof Error ? error.message : "Error al crear cliente";
     return NextResponse.json(
-      { error: error.message || "Error al crear cliente" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

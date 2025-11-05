@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { RiderService } from "@/lib/rider-service";
 import { prisma } from "@/lib/prisma";
 
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user is a rider
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: session.user.email! },
       include: { riders: true },
     });
 
@@ -59,10 +59,11 @@ export async function POST(request: NextRequest) {
       message: "Ubicación actualizada",
       rider: updatedRider,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating location:", error);
+    const errorMessage = error instanceof Error ? error.message : "Error al actualizar ubicación";
     return NextResponse.json(
-      { error: error.message || "Error al actualizar ubicación" },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -96,7 +97,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const filters: any = {};
+    const filters: { from?: Date; to?: Date; limit?: number } = {};
     if (from) filters.from = new Date(from);
     if (to) filters.to = new Date(to);
     if (limit) filters.limit = parseInt(limit);
@@ -107,10 +108,11 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json({ history });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching location history:", error);
+    const errorMessage = error instanceof Error ? error.message : "Error al obtener historial de ubicación";
     return NextResponse.json(
-      { error: error.message || "Error al obtener historial de ubicación" },
+      { error: errorMessage },
       { status: 500 }
     );
   }
